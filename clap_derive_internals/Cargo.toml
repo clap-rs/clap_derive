@@ -1,5 +1,5 @@
 [package]
-name = "clap_derive"
+name = "clap_derive_internals"
 description = """
 Custom derives for Clap.
 """
@@ -10,21 +10,29 @@ authors = [
 	"Kevin K. <kbknapp@gmail.com>"
 ]
 license = "MIT/Apache-2.0"
-categories = ["command-line-interface"]
+categories = ["development-tools::procedural-macro-helpers"]
 keywords = ["macro", "clap", "command-line", "structopt", "derive"]
 readme = "README.md"
-repository = "https://github.com/kbknapp/clap-derives"
+repository = "https://github.com/kbknapp/clap-derive"
 
 [badges]
-travis-ci = { repository = "https://github.com/kbknapp/clap-derives" }
-appveyor = { repository = "https://github.com/kbknapp/clap-derives", service = "github" }
+travis-ci = { repository = "https://github.com/kbknapp/clap-derive" }
+appveyor = { repository = "https://github.com/kbknapp/clap-derive", service = "github" }
+
+[lib]
+proc-macro = true
 
 [dependencies]
-clap = {version = "2", path = "../clap-rs" }
-clippy    = { version = "~0.0.166", optional = true }
+quote = "*"
+syn = "*"
+error-chain = "*"
 
-[dev-dependencies]
-clap_derive_internals = {path = "clap_derive_internals/"}
+
+[dependencies]
+quote = "*"
+syn = "*"
+error-chain = "*"
+clippy    = { version = "~0.0.166", optional = true }
 
 [features]
 default     = []

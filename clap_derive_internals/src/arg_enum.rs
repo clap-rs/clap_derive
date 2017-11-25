@@ -4,8 +4,6 @@ use ClapDerive;
 use helpers;
 use errors::*;
 
-pub struct ArgEnum;
-
 impl ClapDerive for ArgEnum {
     fn generate_from(ast: &DeriveInput) -> Result<Tokens> {
         let from_str_block = impl_from_str(ast)?;
