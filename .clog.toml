@@ -1,0 +1,12 @@
+[clog]
+repository = "https://github.com/kbknapp/clap-derives"
+outfile = "CHANGELOG.md"
+from-latest-tag = true
+
+[sections]
+Performance = ["perf"]
+Improvements = ["impr", "im", "imp"]
+Documentation = ["docs"]
+Deprecations = ["depr"]
+Examples = ["examples"]
+"API Additions" = ["add", "api"]

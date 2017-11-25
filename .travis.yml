@@ -1,11 +1,58 @@
+sudo: true
 language: rust
-sudo: false
+cache: cargo
 env:
   global:
     - RUST_BACKTRACE=1
-cache: cargo
-
+rust:
+  - nightly
+  - nightly-2017-10-11
+  - beta
+  - stable
+  - 1.20.0
 matrix:
-  include:
-    - rust: nightly
-    - rust: stable
+    allow_failures:
+        - rust: nightly
+before_script:
+  - |
+    pip install git+git://github.com/kbknapp/travis-cargo.git --user &&
+    export PATH=$HOME/.local/bin:$PATH
+  - |
+    if [[ "$TRAVIS_RUST_VERSION" == "1.13.0" ]]; then
+        echo "Old Rust detected, removing version-sync dependency"
+        sed -i "/^version-sync =/d" Cargo.toml
+        rm "tests/version-numbers.rs"
+    fi
+script:
+  - |
+    travis-cargo test -- --verbose
+addons:
+  apt:
+    packages:
+    - libcurl4-openssl-dev
+    - libelf-dev
+    - libdw-dev
+    - cmake
+    - gcc
+    - binutils-dev
+after_success:
+  - |
+    wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
+    tar xzf master.tar.gz &&
+    cd kcov-master &&
+    mkdir build &&
+    cd build &&
+    cmake .. &&
+    make &&
+    sudo make install &&
+    cd ../.. &&
+    rm -rf kcov-master &&
+    cargo clean &&
+    cargo test --no-run &&
+    for file in target/debug/*-*; do mkdir -p "target/cov/$(basename $file)"; kcov --exclude-pattern=/.cargo --verify "target/cov/$(basename $file)" "$file"; done &&
+    kcov --coveralls-id=$TRAVIS_JOB_ID --merge target/cov target/cov/* &&
+    echo "Uploaded code coverage"
+env:
+  global:
+    - TRAVIS_CARGO_NIGHTLY_FEATURE=lints
+
