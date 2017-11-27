@@ -1,6 +1,6 @@
 [package]
 name = "clap-derive"
-description = "Custom derives for Clap"
+description = "Custom Derive procedural macros for clap"
 version = "0.0.6"
 authors = [
 	"hoverbear <andrew@hoverbear.org>",
@@ -8,28 +8,31 @@ authors = [
 	"Kevin K. <kbknapp@gmail.com>"
 ]
 license = "MIT/Apache-2.0"
-categories = ["command-line-interface"]
+categories = ["command-line-interface", "development-tools::procedural-macro-helpers"]
 keywords = ["macro", "clap", "command-line", "structopt", "derive"]
 readme = "README.md"
-repository = "https://github.com/kbknapp/clap-derives"
+repository = "https://github.com/kbknapp/clap-derive"
+
+[lib]
+proc-macro = true
 
 [badges]
-travis-ci = { repository = "https://github.com/kbknapp/clap-derives" }
-appveyor = { repository = "https://github.com/kbknapp/clap-derives", service = "github" }
-
-[workspace]
+travis-ci = { repository = "https://github.com/kbknapp/clap-derive" }
+appveyor = { repository = "https://github.com/kbknapp/clap-derive", service = "github" }
 
 [dependencies]
-clap = "2"
+clap = {version = "2", path = "../clap-rs", features = ["unstable"]}
+quote = "*"
+syn = "*"
+error-chain = "*"
 clippy    = { version = "~0.0.166", optional = true }
 
 [dev-dependencies]
-clap-derive-internals = {path = "clap-derive-internals/"}
 
 [features]
 default     = []
-unstable    = [] # for building with unstable clap features (doesn't require nightly Rust) 
-nightly     = [] # for building with unstable Rust features 
+unstable    = [] # for building with unstable clap features (doesn't require nightly Rust)
+nightly     = [] # for building with unstable Rust features
 lints       = ["clippy"] # Requires nightly Rust
 
 [profile.release]

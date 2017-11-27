@@ -1,8 +1,8 @@
 use syn;
 use quote;
-use clap;
 
 use {Parser, Ty, AttrSource, ty, sub_type, extract_attrs, from_attr_or_env};
+use errors::Result;
 
 fn impl_clap_app_for_struct(name: &syn::Ident, fields: &[syn::Field], attrs: &[syn::Attribute]) -> quote::Tokens {
     let clap = gen_clap_struct(attrs);
@@ -47,7 +47,7 @@ fn impl_clap_app_for_enum(name: &syn::Ident, variants: &[syn::Variant], attrs: &
     }
 }
 
-pub(crate) fn impl_clap_app(ast: &syn::DeriveInput) -> Result<quote::Tokens, clap::Error> {
+pub(crate) fn impl_clap_app(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
     let struct_name = &ast.ident;
     let inner_impl = match ast.body {
         syn::Body::Struct(syn::VariantData::Struct(ref fields)) =>

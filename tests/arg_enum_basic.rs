@@ -1,7 +1,5 @@
-#[macro_use]
-extern crate clap;
-#[macro_use]
-extern crate clap_derive;
+#[macro_use] extern crate clap;
+#[macro_use] extern crate clap_derive;
 
 use clap::{App, Arg};
 
