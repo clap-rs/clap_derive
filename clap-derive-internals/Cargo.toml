@@ -1,8 +1,6 @@
 [package]
 name = "clap-derive-internals"
-description = """
-Custom derives for Clap.
-"""
+description = "clap-custom-derive internals and procedural macros"
 version = "0.0.6"
 authors = [
 	"hoverbear <andrew@hoverbear.org>",

@@ -1,8 +1,6 @@
 [package]
 name = "clap-derive"
-description = """
-Custom derives for Clap.
-"""
+description = "Custom derives for Clap"
 version = "0.0.6"
 authors = [
 	"hoverbear <andrew@hoverbear.org>",
@@ -28,8 +26,8 @@ clap-derive-internals = {path = "clap-derive-internals/"}
 
 [features]
 default     = []
-unstable    = [] # for building with unstable clap features (doesn't require nightly Rust) (currently none)
-nightly     = [] # for building with unstable Rust features (currently none)
+unstable    = [] # for building with unstable clap features (doesn't require nightly Rust) 
+nightly     = [] # for building with unstable Rust features 
 lints       = ["clippy"] # Requires nightly Rust
 
 [profile.release]
