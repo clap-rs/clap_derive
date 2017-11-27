@@ -22,34 +22,55 @@
 #![cfg_attr(feature = "lints", plugin(clippy))]
 #![cfg_attr(feature = "lints", deny(warnings))]
 
-/// Used for Custom Derive (in the `clap_derive` crate) to automatically build an `App` from an
-/// arbitrary struct, and then deserialize the argument matches back into that struct automatically
-pub trait ClapApp: IntoApp + FromArgMatches {
-    /// Gets the struct from the command line arguments.  Print the
-    /// error message and quit the program in case of failure.
-    fn parse() -> Self where Self: Sized {
-        Self::from_clap(Self::clap().get_matches())
+extern crate clap;
+
+use std::ffi::OsString;
+
+/// @TODO @release @docs
+pub trait ClapApp: IntoApp + FromArgMatches + Sized {
+
+    /// @TODO @release @docs
+    fn parse() -> Self {
+        Self::from_argmatches(Self::into_app().get_matches())
     }
-    /// Gets the struct from the command line arguments.  Print the
-    /// error message and quit the program in case of failure.
-    fn try_parse(v: Vec<_>) -> Result<Self, _> where Self: Sized {
-        Self::from_clap(Self::clap().get_matches())
+
+    /// @TODO @release @docs
+    fn parse_from<I, T>(argv: I) -> Self
+        where I: IntoIterator<Item = T>,
+              T: Into<OsString> + Clone
+    {
+        Self::from_argmatches(Self::into_app().get_matches_from(argv))
     }
-    /// Gets the struct from the command line arguments.  Print the
-    /// error message and quit the program in case of failure.
-    fn parse_from(v: Vec<_>) -> Self where Self: Sized {
-        Self::from_clap(Self::clap().get_matches())
+
+
+    /// @TODO @release @docs
+    fn try_parse() -> Result<Self, clap::Error> {
+        Self::try_from_argmatches(Self::into_app().get_matches_safe()?)
     }
-    /// Gets the struct from the command line arguments.  Print the
-    /// error message and quit the program in case of failure.
-    fn try_parse_from(v: Vec<_>) -> Result<Self, _> where Self: Sized {
-        Self::from_clap(Self::clap().get_matches())
+
+
+    /// @TODO @release @docs
+    fn try_parse_from<I, T>(argv: I) -> Result<Self, clap::Error> 
+        where I: IntoIterator<Item = T>,
+              T: Into<OsString> + Clone
+    {
+        Self::try_from_argmatches(Self::into_app().get_matches_from_safe(argv)?)
     }
 }
 
-/// Used for Custom Derive (in the `clap_derive` crate) to automatically build an `App` from an
-/// arbitrary struct
+/// @TODO @release @docs
 pub trait IntoApp {
-    /// Returns the corresponding `clap::App`.
+    /// @TODO @release @docs
     fn into_app<'a, 'b>() -> clap::App<'a, 'b>;
 }
+
+/// @TODO @release @docs
+pub trait FromArgMatches: Sized {
+    /// @TODO @release @docs
+    fn from_argmatches<'a>(matches: clap::ArgMatches<'a>) -> Self;
+    /// @TODO @release @docs
+    fn try_from_argmatches<'a>(matches: clap::ArgMatches<'a>) -> Result<Self, clap::Error>;
+}
+
+/// @TODO @release @docs
+pub trait ArgEnum { }
