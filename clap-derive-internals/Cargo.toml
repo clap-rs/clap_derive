@@ -26,12 +26,6 @@ proc-macro = true
 quote = "*"
 syn = "*"
 error-chain = "*"
-
-
-[dependencies]
-quote = "*"
-syn = "*"
-error-chain = "*"
 clippy    = { version = "~0.0.166", optional = true }
 
 [features]
