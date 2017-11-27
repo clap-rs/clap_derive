@@ -24,52 +24,14 @@ proc-macro = true
 quote = "*"
 syn = "*"
 error-chain = "*"
+clap = "2"
 clippy    = { version = "~0.0.166", optional = true }
 
 [features]
 default     = []
-unstable    = [] # for building with unstable clap features (doesn't require nightly Rust) (currently none)
-nightly     = [] # for building with unstable Rust features (currently none)
+unstable    = [] # for building with unstable clap features (doesn't require nightly Rust) 
+nightly     = [] # for building with unstable Rust features 
 lints       = ["clippy"] # Requires nightly Rust
-
-[profile.release]
-opt-level = 3
-debug = false
-rpath = false
-lto = true
-debug-assertions = false
-# codegen-units ignored with lto=true
-
-[profile.dev]
-opt-level = 0
-debug = true
-rpath = false
-lto = false
-debug-assertions = true
-codegen-units = 4
-
-[profile.test]
-opt-level = 1
-debug = true
-rpath = false
-lto = false
-debug-assertions = true
-codegen-units = 4
-
-[profile.bench]
-opt-level = 3
-debug = false
-rpath = false
-lto = true
-debug-assertions = false
-
-[profile.doc]
-opt-level = 0
-debug = true
-rpath = false
-lto = false
-debug-assertions = true
-codegen-units = 4
 
 [package.metadata.docs.rs]
 features = ["doc"]

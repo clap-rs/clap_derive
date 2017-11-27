@@ -17,6 +17,8 @@ repository = "https://github.com/kbknapp/clap-derives"
 travis-ci = { repository = "https://github.com/kbknapp/clap-derives" }
 appveyor = { repository = "https://github.com/kbknapp/clap-derives", service = "github" }
 
+[workspace]
+
 [dependencies]
 clap = "2"
 clippy    = { version = "~0.0.166", optional = true }
