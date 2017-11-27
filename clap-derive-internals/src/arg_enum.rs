@@ -1,22 +1,20 @@
-use syn::DeriveInput;
-use quote::Tokens;
-use ClapDerive;
+use syn;
+use quote;
+
 use helpers;
 use errors::*;
 
-impl ClapDerive for ArgEnum {
-    fn generate_from(ast: &DeriveInput) -> Result<Tokens> {
-        let from_str_block = impl_from_str(ast)?;
-        let variants_block = impl_variants(ast)?;
-        
-        Ok(quote! {
-            #from_str_block
-            #variants_block
-        })
-    }
+pub(crate) fn impl_arg_enum(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
+    let from_str_block = impl_from_str(ast)?;
+    let variants_block = impl_variants(ast)?;
+    
+    Ok(quote! {
+        #from_str_block
+        #variants_block
+    })
 }
 
-fn impl_from_str(ast: &DeriveInput) -> Result<Tokens> {
+fn impl_from_str(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
     let ident = &ast.ident;
     let is_case_sensitive = ast.attrs.iter().any(|v| v.name() == "case_sensitive");
     let variants = helpers::variants(ast)?;
@@ -55,7 +53,7 @@ fn impl_from_str(ast: &DeriveInput) -> Result<Tokens> {
     })
 }
 
-fn impl_variants(ast: &DeriveInput) -> Result<Tokens> {
+fn impl_variants(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
     let ident = &ast.ident;
     let variants = helpers::variants(ast)?
         .iter()
