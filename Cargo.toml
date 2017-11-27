@@ -1,5 +1,5 @@
 [package]
-name = "clap_derive"
+name = "clap-derive"
 description = """
 Custom derives for Clap.
 """
@@ -24,7 +24,7 @@ clap = {version = "2", path = "../clap-rs" }
 clippy    = { version = "~0.0.166", optional = true }
 
 [dev-dependencies]
-clap_derive_internals = {path = "clap_derive_internals/"}
+clap-derive-internals = {path = "clap-derive-internals/"}
 
 [features]
 default     = []
