@@ -12,7 +12,13 @@ pub(crate) enum Ty {
 }
 
 pub(crate) fn ty(t: &syn::Ty) -> Ty {
-    if let syn::Ty::Path(None, syn::Path { segments: ref segs, .. }) = *t {
+    if let syn::Ty::Path(
+        None,
+        syn::Path {
+            segments: ref segs, ..
+        },
+    ) = *t
+    {
         match segs.last().unwrap().ident.as_ref() {
             "bool" => Ty::Bool,
             "u64" => Ty::U64,
@@ -32,16 +38,22 @@ pub(crate) fn sub_type(t: &syn::Ty) -> Option<&syn::Ty> {
     };
     match *segs.last().unwrap() {
         syn::PathSegment {
-            parameters: syn::PathParameters::AngleBracketed(
-                syn::AngleBracketedParameterData { ref types, .. }),
+            parameters:
+                syn::PathParameters::AngleBracketed(syn::AngleBracketedParameterData { ref types, .. }),
             ..
-        } if !types.is_empty() => Some(&types[0]),
-            _ => None,
+        } if !types.is_empty() =>
+        {
+            Some(&types[0])
+        }
+        _ => None,
     }
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) enum AttrSource { Struct, Field, }
+pub(crate) enum AttrSource {
+    Struct,
+    Field,
+}
 
 #[derive(Debug)]
 pub(crate) enum Parser {
@@ -56,26 +68,40 @@ pub(crate) enum Parser {
     TryFromOsStr,
 }
 
-pub(crate) fn extract_attrs<'a>(attrs: &'a [syn::Attribute], attr_source: AttrSource) -> Box<Iterator<Item = (syn::Ident, syn::Lit)> + 'a> {
-    let settings_attrs = attrs.iter()
+pub(crate) fn extract_attrs<'a>(
+    attrs: &'a [syn::Attribute],
+    attr_source: AttrSource,
+) -> Box<Iterator<Item = (syn::Ident, syn::Lit)> + 'a> {
+    let settings_attrs = attrs
+        .iter()
         .filter_map(|attr| match attr.value {
             syn::MetaItem::List(ref i, ref v) if i.as_ref() == "clap" => Some(v),
             _ => None,
-        }).flat_map(|v| v.iter().filter_map(|mi| match *mi {
-            syn::NestedMetaItem::MetaItem(syn::MetaItem::NameValue(ref i, ref l)) =>
-                Some((i.clone(), l.clone())),
-            _ => None,
-        }));
+        })
+        .flat_map(|v| {
+            v.iter().filter_map(|mi| match *mi {
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::NameValue(ref i, ref l)) => {
+                    Some((i.clone(), l.clone()))
+                }
+                _ => None,
+            })
+        });
 
-    let doc_comments: Vec<String> = attrs.iter()
+    let doc_comments: Vec<String> = attrs
+        .iter()
         .filter_map(move |attr| {
             if let syn::Attribute {
-                value: syn::MetaItem::NameValue(ref name, syn::Lit::Str(ref value, syn::StrStyle::Cooked)),
+                value:
+                    syn::MetaItem::NameValue(ref name, syn::Lit::Str(ref value, syn::StrStyle::Cooked)),
                 is_sugared_doc: true,
                 ..
-            } = *attr {
-                if name != "doc" { return None; }
-                let text = value.trim_left_matches("//!")
+            } = *attr
+            {
+                if name != "doc" {
+                    return None;
+                }
+                let text = value
+                    .trim_left_matches("//!")
                     .trim_left_matches("///")
                     .trim_left_matches("/*!")
                     .trim_left_matches("/**")
@@ -102,7 +128,8 @@ pub(crate) fn extract_attrs<'a>(attrs: &'a [syn::Attribute], attr_source: AttrSo
 
 pub(crate) fn from_attr_or_env(attrs: &[(syn::Ident, syn::Lit)], key: &str, env: &str) -> syn::Lit {
     let default = env::var(env).unwrap_or_default();
-    attrs.iter()
+    attrs
+        .iter()
         .filter(|&&(ref i, _)| i.as_ref() == key)
         .last()
         .map(|&(_, ref l)| l.clone())

@@ -1,10 +1,14 @@
 use syn;
 use quote;
 
-use helpers::{Parser, Ty, AttrSource, ty, sub_type, extract_attrs, from_attr_or_env};
+use helpers::{extract_attrs, from_attr_or_env, sub_type, ty, AttrSource, Parser, Ty};
 use errors::Result;
 
-fn impl_clap_app_for_struct(name: &syn::Ident, fields: &[syn::Field], attrs: &[syn::Attribute]) -> quote::Tokens {
+fn impl_clap_app_for_struct(
+    name: &syn::Ident,
+    fields: &[syn::Field],
+    attrs: &[syn::Attribute],
+) -> quote::Tokens {
     let clap = gen_clap_struct(attrs);
     let augment_clap = gen_augment_clap(fields);
     let from_clap = gen_from_clap(name, fields);
@@ -21,11 +25,18 @@ fn impl_clap_app_for_struct(name: &syn::Ident, fields: &[syn::Field], attrs: &[s
     }
 }
 
-fn impl_clap_app_for_enum(name: &syn::Ident, variants: &[syn::Variant], attrs: &[syn::Attribute]) -> quote::Tokens {
+fn impl_clap_app_for_enum(
+    name: &syn::Ident,
+    variants: &[syn::Variant],
+    attrs: &[syn::Attribute],
+) -> quote::Tokens {
     if variants.iter().any(|variant| {
-            if let syn::VariantData::Tuple(..) = variant.data { true } else { false }
-        })
-    {
+        if let syn::VariantData::Tuple(..) = variant.data {
+            true
+        } else {
+            false
+        }
+    }) {
         panic!("enum variants cannot be tuples")
     }
 
@@ -50,11 +61,11 @@ fn impl_clap_app_for_enum(name: &syn::Ident, variants: &[syn::Variant], attrs: &
 pub(crate) fn impl_clap_app(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
     let struct_name = &ast.ident;
     let inner_impl = match ast.body {
-        syn::Body::Struct(syn::VariantData::Struct(ref fields)) =>
-            impl_clap_app_for_struct(struct_name, fields, &ast.attrs),
-        syn::Body::Enum(ref variants) =>
-            impl_clap_app_for_enum(struct_name, variants, &ast.attrs),
-        _ => panic!("clap_derive only supports non-tuple structs and enums")
+        syn::Body::Struct(syn::VariantData::Struct(ref fields)) => {
+            impl_clap_app_for_struct(struct_name, fields, &ast.attrs)
+        }
+        syn::Body::Enum(ref variants) => impl_clap_app_for_enum(struct_name, variants, &ast.attrs),
+        _ => panic!("clap_derive only supports non-tuple structs and enums"),
     };
 
     let dummy_const = syn::Ident::new(format!("_IMPL_CLAP_APP_FOR_{}", struct_name));
@@ -70,17 +81,21 @@ pub(crate) fn impl_clap_app(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 }
 
 fn is_subcommand(field: &syn::Field) -> bool {
-    field.attrs.iter()
-        .map(|attr| &attr.value)
-        .any(|meta| if let syn::MetaItem::List(ref i, ref l) = *meta {
-            if i != "clap" { return false; }
+    field.attrs.iter().map(|attr| &attr.value).any(|meta| {
+        if let syn::MetaItem::List(ref i, ref l) = *meta {
+            if i != "clap" {
+                return false;
+            }
             match l.first() {
-                Some(&syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(ref inner))) => inner == "subcommand",
-                _ => false
+                Some(&syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(ref inner))) => {
+                    inner == "subcommand"
+                }
+                _ => false,
             }
         } else {
-          false
-        })
+            false
+        }
+    })
 }
 
 fn get_default_parser() -> (Parser, quote::Tokens) {
@@ -88,7 +103,9 @@ fn get_default_parser() -> (Parser, quote::Tokens) {
 }
 
 fn get_parser(field: &syn::Field) -> Option<(Parser, quote::Tokens)> {
-    field.attrs.iter()
+    field
+        .attrs
+        .iter()
         .flat_map(|attr| {
             if let syn::MetaItem::List(ref i, ref l) = attr.value {
                 if i == "clap" {
@@ -105,38 +122,36 @@ fn get_parser(field: &syn::Field) -> Option<(Parser, quote::Tokens)> {
             }
             None
         })
-        .map(|attr| {
-            match *attr {
-                syn::NestedMetaItem::MetaItem(syn::MetaItem::NameValue(ref i, syn::Lit::Str(ref v, _))) => {
-                    let function = syn::parse_path(v).expect("parser function path");
-                    let parser = if i == "from_str" {
-                        Parser::FromStr
-                    } else if i == "try_from_str" {
-                        Parser::TryFromStr
-                    } else if i == "from_os_str" {
-                        Parser::FromOsStr
-                    } else if i == "try_from_os_str" {
-                        Parser::TryFromOsStr
-                    } else {
-                        panic!("unsupported parser {}", i)
-                    };
-                    (parser, quote!(#function))
-                }
-                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(ref i)) => {
-                    if i == "from_str" {
-                        (Parser::FromStr, quote!(::std::convert::From::from))
-                    } else if i == "try_from_str" {
-                        (Parser::TryFromStr, quote!(::std::str::FromStr::from_str))
-                    } else if i == "from_os_str" {
-                        (Parser::FromOsStr, quote!(::std::convert::From::from))
-                    } else if i == "try_from_os_str" {
-                        panic!("cannot omit parser function name with `try_from_os_str`")
-                    } else {
-                        panic!("unsupported parser {}", i)
-                    }
-                }
-                _ => panic!("unknown value parser specification"),
+        .map(|attr| match *attr {
+            syn::NestedMetaItem::MetaItem(
+                syn::MetaItem::NameValue(ref i, syn::Lit::Str(ref v, _)),
+            ) => {
+                let function = syn::parse_path(v).expect("parser function path");
+                let parser = if i == "from_str" {
+                    Parser::FromStr
+                } else if i == "try_from_str" {
+                    Parser::TryFromStr
+                } else if i == "from_os_str" {
+                    Parser::FromOsStr
+                } else if i == "try_from_os_str" {
+                    Parser::TryFromOsStr
+                } else {
+                    panic!("unsupported parser {}", i)
+                };
+                (parser, quote!(#function))
             }
+            syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(ref i)) => if i == "from_str" {
+                (Parser::FromStr, quote!(::std::convert::From::from))
+            } else if i == "try_from_str" {
+                (Parser::TryFromStr, quote!(::std::str::FromStr::from_str))
+            } else if i == "from_os_str" {
+                (Parser::FromOsStr, quote!(::std::convert::From::from))
+            } else if i == "try_from_os_str" {
+                panic!("cannot omit parser function name with `try_from_os_str`")
+            } else {
+                panic!("unsupported parser {}", i)
+            },
+            _ => panic!("unknown value parser specification"),
         })
         .next()
 }
@@ -151,13 +166,14 @@ fn convert_with_custom_parse(cur_type: Ty) -> Ty {
 /// Generate a block of code to add arguments/subcommands corresponding to
 /// the `fields` to an app.
 fn gen_augmentation(fields: &[syn::Field], app_var: &syn::Ident) -> quote::Tokens {
-    let subcmds: Vec<quote::Tokens> = fields.iter()
+    let subcmds: Vec<quote::Tokens> = fields
+        .iter()
         .filter(|&field| is_subcommand(field))
         .map(|field| {
             let cur_type = ty(&field.ty);
             let subcmd_type = match (cur_type, sub_type(&field.ty)) {
                 (Ty::Option, Some(sub_type)) => sub_type,
-                _ => &field.ty
+                _ => &field.ty,
             };
             let required = if cur_type == Ty::Option {
                 quote!()
@@ -172,9 +188,13 @@ fn gen_augmentation(fields: &[syn::Field], app_var: &syn::Ident) -> quote::Token
         })
         .collect();
 
-    assert!(subcmds.len() <= 1, "cannot have more than one nested subcommand");
+    assert!(
+        subcmds.len() <= 1,
+        "cannot have more than one nested subcommand"
+    );
 
-    let args = fields.iter()
+    let args = fields
+        .iter()
         .filter(|&field| !is_subcommand(field))
         .map(|field| {
             let name = gen_name(field);
@@ -199,7 +219,7 @@ fn gen_augmentation(fields: &[syn::Field], app_var: &syn::Ident) -> quote::Token
                 (Parser::TryFromOsStr, f) => quote! {
                     .validator_os(|s| #f(&s).map(|_: #convert_type| ()))
                 },
-                _ => quote! {},
+                _ => quote!{},
             };
 
             let modifier = match cur_type {
@@ -209,11 +229,12 @@ fn gen_augmentation(fields: &[syn::Field], app_var: &syn::Ident) -> quote::Token
                 Ty::Vec => quote!( .takes_value(true).multiple(true) #validator ),
                 Ty::Other => {
                     let required = extract_attrs(&field.attrs, AttrSource::Field)
-                        .find(|&(ref i, _)| i.as_ref() == "default_value"
-                              || i.as_ref() == "default_value_raw")
+                        .find(|&(ref i, _)| {
+                            i.as_ref() == "default_value" || i.as_ref() == "default_value_raw"
+                        })
                         .is_none();
                     quote!( .takes_value(true).multiple(false).required(#required) #validator )
-                },
+                }
             };
             let from_attr = extract_attrs(&field.attrs, AttrSource::Field)
                 .filter(|&(ref i, _)| i.as_ref() != "name")
@@ -236,8 +257,11 @@ fn gen_attr_call(key: &syn::Ident, val: &syn::Lit) -> quote::Tokens {
         if key.ends_with("_raw") {
             let key = syn::Ident::from(&key[..(key.len() - 4)]);
             // Call method without quoting the string
-            let ts = syn::parse_token_trees(val)
-                .expect(&format!("bad parameter {} = {}: the parameter must be valid rust code", key, val));
+            let ts = syn::parse_token_trees(val).expect(&format!(
+                "bad parameter {} = {}: the parameter must be valid rust code",
+                key,
+                val
+            ));
             return quote!(.#key(#(#ts)*));
         }
     }
@@ -252,11 +276,11 @@ fn gen_constructor(fields: &[syn::Field]) -> quote::Tokens {
             let cur_type = ty(&field.ty);
             let subcmd_type = match (cur_type, sub_type(&field.ty)) {
                 (Ty::Option, Some(sub_type)) => sub_type,
-                _ => &field.ty
+                _ => &field.ty,
             };
             let unwrapper = match cur_type {
                 Ty::Option => quote!(),
-                _ => quote!( .unwrap() )
+                _ => quote!( .unwrap() ),
             };
             quote!( #field_name: #subcmd_type ::from_subcommand(matches.subcommand()) #unwrapper )
         } else {
@@ -267,21 +291,13 @@ fn gen_constructor(fields: &[syn::Field]) -> quote::Tokens {
             }
 
             let (value_of, values_of, parse) = match parser.unwrap_or_else(get_default_parser) {
-                (Parser::FromStr, f) => (
-                    quote!(value_of),
-                    quote!(values_of),
-                    f,
-                ),
+                (Parser::FromStr, f) => (quote!(value_of), quote!(values_of), f),
                 (Parser::TryFromStr, f) => (
                     quote!(value_of),
                     quote!(values_of),
                     quote!(|s| #f(s).unwrap()),
                 ),
-                (Parser::FromOsStr, f) => (
-                    quote!(value_of_os),
-                    quote!(values_of_os),
-                    f,
-                ),
+                (Parser::FromOsStr, f) => (quote!(value_of_os), quote!(values_of_os), f),
                 (Parser::TryFromOsStr, f) => (
                     quote!(value_of_os),
                     quote!(values_of_os),
@@ -325,7 +341,7 @@ fn gen_name(field: &syn::Field) -> syn::Ident {
             &syn::Lit::Str(ref s, _) => Some(syn::Ident::new(s.clone())),
             _ => None,
         })
-        .unwrap_or_else(|| field.ident.as_ref().unwrap().clone())
+        .unwrap_or_else(|_| field.ident.as_ref().unwrap().clone())
 }
 
 fn gen_from_clap(struct_name: &syn::Ident, fields: &[syn::Field]) -> quote::Tokens {
@@ -353,8 +369,11 @@ fn gen_clap(attrs: &[syn::Attribute]) -> quote::Tokens {
     let version = from_attr_or_env(&attrs, "version", "CARGO_PKG_VERSION");
     let author = format_author(from_attr_or_env(&attrs, "author", "CARGO_PKG_AUTHORS"));
     let about = from_attr_or_env(&attrs, "about", "CARGO_PKG_DESCRIPTION");
-    let settings = attrs.iter()
-        .filter(|&&(ref i, _)| !["name", "version", "author", "about"].contains(&i.as_ref()))
+    let settings = attrs
+        .iter()
+        .filter(|&&(ref i, _)| {
+            !["name", "version", "author", "about"].contains(&i.as_ref())
+        })
         .map(|&(ref i, ref l)| gen_attr_call(i, l))
         .collect::<Vec<_>>();
 
@@ -403,9 +422,8 @@ fn gen_augment_clap_enum(variants: &[syn::Variant]) -> quote::Tokens {
     let subcommands = variants.iter().map(|variant| {
         let name = extract_attrs(&variant.attrs, AttrSource::Struct)
             .filter_map(|attr| match attr {
-                (ref i, syn::Lit::Str(ref s, ..)) if i == "name" =>
-                    Some(s.to_string()),
-                _ => None
+                (ref i, syn::Lit::Str(ref s, ..)) if i == "name" => Some(s.to_string()),
+                _ => None,
             })
             .next()
             .unwrap_or_else(|| variant.ident.to_string());
@@ -413,7 +431,7 @@ fn gen_augment_clap_enum(variants: &[syn::Variant]) -> quote::Tokens {
         let arg_block = match variant.data {
             syn::VariantData::Struct(ref fields) => gen_augmentation(fields, &app_var),
             syn::VariantData::Unit => quote!( #app_var ),
-            _ => unreachable!()
+            _ => unreachable!(),
         };
         let from_attr = extract_attrs(&variant.attrs, AttrSource::Struct)
             .filter(|&(ref i, _)| i != "name")
@@ -449,17 +467,16 @@ fn gen_from_subcommand(name: &syn::Ident, variants: &[syn::Variant]) -> quote::T
     let match_arms = variants.iter().map(|variant| {
         let sub_name = extract_attrs(&variant.attrs, AttrSource::Struct)
             .filter_map(|attr| match attr {
-                (ref i, syn::Lit::Str(ref s, ..)) if i == "name" =>
-                    Some(s.to_string()),
-                _ => None
+                (ref i, syn::Lit::Str(ref s, ..)) if i == "name" => Some(s.to_string()),
+                _ => None,
             })
             .next()
             .unwrap_or_else(|| variant.ident.as_ref().to_string());
         let variant_name = &variant.ident;
         let constructor_block = match variant.data {
             syn::VariantData::Struct(ref fields) => gen_constructor(fields),
-            syn::VariantData::Unit => quote!(),  // empty
-            _ => unreachable!()
+            syn::VariantData::Unit => quote!(), // empty
+            _ => unreachable!(),
         };
 
         quote! {

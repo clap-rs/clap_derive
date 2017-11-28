@@ -6,7 +6,7 @@ use errors::*;
 pub(crate) fn impl_arg_enum(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
     let from_str_block = impl_from_str(ast)?;
     let variants_block = impl_variants(ast)?;
-    
+
     Ok(quote! {
         #from_str_block
         #variants_block
@@ -18,20 +18,23 @@ fn impl_from_str(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
     let is_case_sensitive = ast.attrs.iter().any(|v| v.name() == "case_sensitive");
     let variants = variants(ast)?;
 
-    let strings = variants.iter()
+    let strings = variants
+        .iter()
         .map(|variant| String::from(variant.ident.as_ref()))
         .collect::<Vec<_>>();
-    
+
     // All of these need to be iterators.
     let ident_slice = [ident.clone()];
     let idents = ident_slice.iter().cycle();
 
     let for_error_message = strings.clone();
 
-    let condition_function_slice = [match is_case_sensitive {
-        true => quote! { str::eq },
-        false => quote! { ::std::ascii::AsciiExt::eq_ignore_ascii_case },
-    }];
+    let condition_function_slice = [
+        match is_case_sensitive {
+            true => quote! { str::eq },
+            false => quote! { ::std::ascii::AsciiExt::eq_ignore_ascii_case },
+        },
+    ];
     let condition_function = condition_function_slice.iter().cycle();
 
     Ok(quote! {

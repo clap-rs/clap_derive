@@ -1,4 +1,3 @@
-
 // Copyright ⓒ 2017 `clap-derive` Authors
 //
 // `clap-derive` is dual licensed under either of
@@ -275,27 +274,22 @@
 //! once to validate, and once to parse. Hence, make sure the function is
 //! side-effect-free.
 
-#![recursion_limit="256"]
-#![deny(
-        missing_docs,
-        missing_debug_implementations,
-        missing_copy_implementations,
-        trivial_casts,
-        unused_import_braces,
-        unused_allocation,
-        unused_qualifications,
-        trivial_numeric_casts)]
+#![recursion_limit = "256"]
+#![deny(missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
+        unused_import_braces, unused_allocation, unused_qualifications, trivial_numeric_casts)]
 #![cfg_attr(not(any(feature = "lints", feature = "nightly")), forbid(unstable_features))]
 #![cfg_attr(feature = "lints", feature(plugin))]
 #![cfg_attr(feature = "lints", plugin(clippy))]
 
 // #![cfg_attr(feature = "lints", deny(warnings))]
 
-extern crate proc_macro;
-extern crate syn;
 extern crate clap;
-#[macro_use] extern crate quote;
-#[macro_use] extern crate error_chain;
+#[macro_use]
+extern crate error_chain;
+extern crate proc_macro;
+#[macro_use]
+extern crate quote;
+extern crate syn;
 
 use errors::*;
 
@@ -306,15 +300,15 @@ mod clap_app;
 
 /// Parses the inputted stream.
 fn derive<F>(input: &proc_macro::TokenStream, impl_fn: F) -> Result<proc_macro::TokenStream>
-    where F: Fn(&syn::DeriveInput) -> Result<quote::Tokens> {
+where
+    F: Fn(&syn::DeriveInput) -> Result<quote::Tokens>,
+{
     // Construct a string representation of the type definition
     let as_string = input.to_string();
     // Parse the string representation
-    let ast = syn::parse_derive_input(&as_string)
-        .map_err(ErrorKind::ParseError)?;
+    let ast = syn::parse_derive_input(&as_string).map_err(ErrorKind::ParseError)?;
     let generated_output = impl_fn(&ast)?;
-    Ok(generated_output.parse()
-        .map_err(ErrorKind::ProcLexError)?)
+    Ok(generated_output.parse().map_err(ErrorKind::ProcLexError)?)
 }
 
 /// It is required to have this seperate and specificly defined.
