@@ -16,10 +16,10 @@ pub(crate) fn impl_arg_enum(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 fn impl_from_str(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
     let ident = &ast.ident;
     let is_case_sensitive = ast.attrs.iter().any(|v| v.name() == "case_sensitive");
-    let variants = helpers::variants(ast)?;
+    let variants = variants(ast)?;
 
     let strings = variants.iter()
-        .map(|ref variant| String::from(variant.ident.as_ref()))
+        .map(|variant| String::from(variant.ident.as_ref()))
         .collect::<Vec<_>>();
     
     // All of these need to be iterators.
@@ -54,9 +54,9 @@ fn impl_from_str(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
 
 fn impl_variants(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
     let ident = &ast.ident;
-    let variants = helpers::variants(ast)?
+    let variants = variants(ast)?
         .iter()
-        .map(|ref variant| String::from(variant.ident.as_ref()))
+        .map(|variant| String::from(variant.ident.as_ref()))
         .collect::<Vec<_>>();
     let length = variants.len();
 

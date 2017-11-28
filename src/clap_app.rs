@@ -1,7 +1,7 @@
 use syn;
 use quote;
 
-use {Parser, Ty, AttrSource, ty, sub_type, extract_attrs, from_attr_or_env};
+use helpers::{Parser, Ty, AttrSource, ty, sub_type, extract_attrs, from_attr_or_env};
 use errors::Result;
 
 fn impl_clap_app_for_struct(name: &syn::Ident, fields: &[syn::Field], attrs: &[syn::Attribute]) -> quote::Tokens {
@@ -26,7 +26,7 @@ fn impl_clap_app_for_enum(name: &syn::Ident, variants: &[syn::Variant], attrs: &
             if let syn::VariantData::Tuple(..) = variant.data { true } else { false }
         })
     {
-        panic!("enum variants cannot be tuples");
+        panic!("enum variants cannot be tuples")
     }
 
     let clap = gen_clap_enum(attrs);
@@ -118,7 +118,7 @@ fn get_parser(field: &syn::Field) -> Option<(Parser, quote::Tokens)> {
                     } else if i == "try_from_os_str" {
                         Parser::TryFromOsStr
                     } else {
-                        panic!("unsupported parser {}", i);
+                        panic!("unsupported parser {}", i)
                     };
                     (parser, quote!(#function))
                 }
@@ -132,7 +132,7 @@ fn get_parser(field: &syn::Field) -> Option<(Parser, quote::Tokens)> {
                     } else if i == "try_from_os_str" {
                         panic!("cannot omit parser function name with `try_from_os_str`")
                     } else {
-                        panic!("unsupported parser {}", i);
+                        panic!("unsupported parser {}", i)
                     }
                 }
                 _ => panic!("unknown value parser specification"),
@@ -325,7 +325,7 @@ fn gen_name(field: &syn::Field) -> syn::Ident {
             &syn::Lit::Str(ref s, _) => Some(syn::Ident::new(s.clone())),
             _ => None,
         })
-        .unwrap_or(field.ident.as_ref().unwrap().clone())
+        .unwrap_or_else(|| field.ident.as_ref().unwrap().clone())
 }
 
 fn gen_from_clap(struct_name: &syn::Ident, fields: &[syn::Field]) -> quote::Tokens {
