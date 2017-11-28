@@ -1,7 +1,6 @@
 use syn;
 use quote;
 
-use helpers;
 use errors::*;
 
 pub(crate) fn impl_arg_enum(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
@@ -68,4 +67,11 @@ fn impl_variants(ast: &syn::DeriveInput) -> Result<quote::Tokens> {
             }
         }
     })
+}
+
+fn variants(ast: &syn::DeriveInput) -> Result<&Vec<syn::Variant>> {
+    match ast.body {
+        syn::Body::Enum(ref variants) => Ok(variants),
+        _ => Err(ErrorKind::WrongBodyType("enum"))?,
+    }
 }
