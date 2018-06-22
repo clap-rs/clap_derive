@@ -1,38 +1,67 @@
-// Copyright ⓒ 2017 `clap-derive` Authors
+// Copyright 2018 Guillaume Pinot (@TeXitoi) <texitoi@texitoi.eu>
 //
-// `clap-derive` is dual licensed under either of
-//  * Apache License, Version 2.0, (LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
-//  * MIT license (LICENSE-MIT or http://opensource.org/licenses/MIT)
-// at your option.
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
 
-//! ## How to `derive(ClapApp)`
+//! This crate defines the `StructOpt` trait and its custom derrive.
+//!
+//! ## Features
+//!
+//! If you want to disable all the `clap` features (colors,
+//! suggestions, ..) add `default-features = false` to the `structopt`
+//! dependency:
+//!
+//! ```toml
+//! [dependencies]
+//! structopt = { version = "0.2", default-features = false }
+//! ```
+//!
+//! ## How to `derive(StructOpt)`
 //!
 //! First, let's look at an example:
 //!
-//! ```ignore
-//! #[derive(ClapApp)]
-//! #[clap(name = "myapp", about = "An example of clap_derive usage.")]
-//! struct MyApp {
-//!     #[clap(short = "d", long = "debug", help = "Activate debug mode")]
+//! ```should_panic
+//! #[macro_use]
+//! extern crate structopt;
+//!
+//! use std::path::PathBuf;
+//! use structopt::StructOpt;
+//!
+//! #[derive(Debug, StructOpt)]
+//! #[structopt(name = "example", about = "An example of StructOpt usage.")]
+//! struct Opt {
+//!     /// Activate debug mode
+//!     #[structopt(short = "d", long = "debug")]
 //!     debug: bool,
-//!     #[clap(short = "s", long = "speed", help = "Set speed", default_value = "42")]
+//!     /// Set speed
+//!     #[structopt(short = "s", long = "speed", default_value = "42")]
 //!     speed: f64,
-//!     #[clap(help = "Input file")]
-//!     input: String,
-//!     #[clap(help = "Output file, stdout if not present")]
-//!     output: Option<String>,
+//!     /// Input file
+//!     #[structopt(parse(from_os_str))]
+//!     input: PathBuf,
+//!     /// Output file, stdout if not present
+//!     #[structopt(parse(from_os_str))]
+//!     output: Option<PathBuf>,
+//! }
+//!
+//! fn main() {
+//!     let opt = Opt::from_args();
+//!     println!("{:?}", opt);
 //! }
 //! ```
 //!
-//! So `derive(ClapApp)` tells Rust to generate a command line parser,
-//! and the various `clap_derive` attributes are simply
+//! So `derive(StructOpt)` tells Rust to generate a command line parser,
+//! and the various `structopt` attributes are simply
 //! used for additional parameters.
 //!
 //! First, define a struct, whatever its name.  This structure will
 //! correspond to a `clap::App`.  Every method of `clap::App` in the
 //! form of `fn function_name(self, &str)` can be use through attributes
 //! placed on the struct. In our example above, the `about` attribute
-//! will become an `.about("An example of ClapApp usage.")` call on the
+//! will become an `.about("An example of StructOpt usage.")` call on the
 //! generated `clap::App`. There are a few attributes that will default
 //! if not specified:
 //!
@@ -42,6 +71,26 @@
 //!   - `author`: Defaults to the crate author name given by Cargo.
 //!   - `about`: Defaults to the crate description given by Cargo.
 //!
+//! Methods from `clap::App` that don't take an `&str` can be called by
+//! wrapping them in `raw()`, e.g. to activate colored help text:
+//!
+//! ```
+//! #[macro_use]
+//! extern crate structopt;
+//!
+//! use structopt::StructOpt;
+//!
+//! #[derive(StructOpt, Debug)]
+//! #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
+//! struct Opt {
+//!     #[structopt(short = "s")]
+//!     speed: bool,
+//!     #[structopt(short = "d")]
+//!     debug: bool,
+//! }
+//! # fn main() {}
+//! ```
+//!
 //! Then, each field of the struct not marked as a subcommand corresponds
 //! to a `clap::Arg`. As with the struct attributes, every method of
 //! `clap::Arg` in the form of `fn function_name(self, &str)` can be used
@@ -49,17 +98,16 @@
 //! The `name` attribute can be used to customize the
 //! `Arg::with_name()` call (defaults to the field name).
 //! For functions that do not take a `&str` as argument, the attribute can be
-//! called `function_name_raw`, e. g. `aliases_raw = "&[\"alias\"]"`.
+//! wrapped in `raw()`, e. g. `raw(aliases = r#"&["alias"]"#, next_line_help = "true")`.
 //!
 //! The type of the field gives the kind of argument:
 //!
-//! Type                 | Effect                               | Added method call to `clap::Arg`
-//! ---------------------|--------------------------------------|--------------------------------------
-//! `bool`               | `true` if present                    | `.takes_value(false).multiple(false)`
-//! `u64`                | number of times the argument is used | `.takes_value(false).multiple(true)`
-//! `Option<T: FromStr>` | optional argument                    | `.takes_value(true).multiple(false)`
-//! `Vec<T: FromStr>`    | list of arguments                    | `.takes_value(true).multiple(true)`
-//! `T: FromStr`         | required argument                    | `.takes_value(true).multiple(false).required(!has_default)`
+//! Type                 | Effect                                            | Added method call to `clap::Arg`
+//! ---------------------|---------------------------------------------------|--------------------------------------
+//! `bool`               | `true` if the flag is present                     | `.takes_value(false).multiple(false)`
+//! `Option<T: FromStr>` | optional positional argument or option            | `.takes_value(true).multiple(false)`
+//! `Vec<T: FromStr>`    | list of options or the other positional arguments | `.takes_value(true).multiple(true)`
+//! `T: FromStr`         | required option or positional argument            | `.takes_value(true).multiple(false).required(!has_default)`
 //!
 //! The `FromStr` trait is used to convert the argument to the given
 //! type, and the `Arg::validator` method is set to a method using
@@ -69,7 +117,10 @@
 //!
 //! Thus, the `speed` argument is generated as:
 //!
-//! ```ignore
+//! ```
+//! # extern crate clap;
+//! # fn parse_validator<T>(_: String) -> Result<(), String> { unimplemented!() }
+//! # fn main() {
 //! clap::Arg::with_name("speed")
 //!     .takes_value(true)
 //!     .multiple(false)
@@ -78,27 +129,28 @@
 //!     .short("s")
 //!     .long("speed")
 //!     .help("Set speed")
-//!     .default_value("42")
+//!     .default_value("42");
+//! # }
 //! ```
 //!
 //! ## Help messages
 //!
 //! Help messages for the whole binary or individual arguments can be
-//! specified using the `about` attribute on the struct/field, as we've
-//! already seen. For convenience, they can also be specified using
-//! doc comments. For example:
+//! specified using the `about` attribute on the struct and the `help`
+//! attribute on the field, as we've already seen. For convenience,
+//! they can also be specified using doc comments. For example:
 //!
-//! ```ignore
-//! #[derive(ClapApp)]
-//! #[clap(name = "foo")]
+//! ```
+//! # #[macro_use] extern crate structopt;
+//! #[derive(StructOpt)]
+//! #[structopt(name = "foo")]
 //! /// The help message that will be displayed when passing `--help`.
 //! struct Foo {
-//!   ...
-//!   #[clap(short = "b")]
+//!   #[structopt(short = "b")]
 //!   /// The description for the arg that will be displayed when passing `--help`.
 //!   bar: String
-//!   ...
 //! }
+//! # fn main() {}
 //! ```
 //!
 //! ## Subcommands
@@ -109,89 +161,100 @@
 //! One example is `git`, which has subcommands such as `add`, `commit`,
 //! and `clone`, to mention just a few.
 //!
-//! `clap` has this functionality, and `clap` supports it through enums:
+//! `clap` has this functionality, and `structopt` supports it through enums:
 //!
-//! ```ignore
-//! #[derive(ClapApp)]
-//! #[clap(name = "git", about = "the stupid content tracker")]
+//! ```
+//! # #[macro_use] extern crate structopt;
+//! # use std::path::PathBuf;
+//! #[derive(StructOpt)]
+//! #[structopt(name = "git", about = "the stupid content tracker")]
 //! enum Git {
-//!     #[clap(name = "add")]
+//!     #[structopt(name = "add")]
 //!     Add {
-//!         #[clap(short = "i")]
+//!         #[structopt(short = "i")]
 //!         interactive: bool,
-//!         #[clap(short = "p")]
+//!         #[structopt(short = "p")]
 //!         patch: bool,
-//!         files: Vec<String>
+//!         #[structopt(parse(from_os_str))]
+//!         files: Vec<PathBuf>
 //!     },
-//!     #[clap(name = "fetch")]
+//!     #[structopt(name = "fetch")]
 //!     Fetch {
-//!         #[clap(long = "dry-run")]
+//!         #[structopt(long = "dry-run")]
 //!         dry_run: bool,
-//!         #[clap(long = "all")]
+//!         #[structopt(long = "all")]
 //!         all: bool,
 //!         repository: Option<String>
 //!     },
-//!     #[clap(name = "commit")]
+//!     #[structopt(name = "commit")]
 //!     Commit {
-//!         #[clap(short = "m")]
+//!         #[structopt(short = "m")]
 //!         message: Option<String>,
-//!         #[clap(short = "a")]
+//!         #[structopt(short = "a")]
 //!         all: bool
 //!     }
 //! }
+//! # fn main() {}
 //! ```
 //!
-//! Using `derive(ClapApp)` on an enum instead of a struct will produce
+//! Using `derive(StructOpt)` on an enum instead of a struct will produce
 //! a `clap::App` that only takes subcommands. So `git add`, `git fetch`,
 //! and `git commit` would be commands allowed for the above example.
 //!
-//! `clap_derive` also provides support for applications where certain flags
+//! `structopt` also provides support for applications where certain flags
 //! need to apply to all subcommands, as well as nested subcommands:
 //!
-//! ```ignore
-//! #[derive(ClapApp)]
-//! #[clap(name = "make-cookie")]
+//! ```
+//! # #[macro_use] extern crate structopt;
+//! # fn main() {}
+//! #[derive(StructOpt)]
+//! #[structopt(name = "make-cookie")]
 //! struct MakeCookie {
-//!     #[clap(name = "supervisor", default_value = "Puck", required = false, long = "supervisor")]
+//!     #[structopt(name = "supervisor", default_value = "Puck", long = "supervisor")]
 //!     supervising_faerie: String,
-//!     #[clap(name = "tree")]
+//!     #[structopt(name = "tree")]
 //!     /// The faerie tree this cookie is being made in.
 //!     tree: Option<String>,
-//!     #[clap(subcommand)]  // Note that we mark a field as a subcommand
+//!     #[structopt(subcommand)]  // Note that we mark a field as a subcommand
 //!     cmd: Command
 //! }
 //!
-//! #[derive(ClapApp)]
+//! #[derive(StructOpt)]
 //! enum Command {
-//!     #[clap(name = "pound")]
+//!     #[structopt(name = "pound")]
 //!     /// Pound acorns into flour for cookie dough.
 //!     Pound {
 //!         acorns: u32
 //!     },
-//!     #[clap(name = "sparkle")]
+//!     #[structopt(name = "sparkle")]
 //!     /// Add magical sparkles -- the secret ingredient!
 //!     Sparkle {
-//!         #[clap(short = "m")]
+//!         #[structopt(short = "m", parse(from_occurrences))]
 //!         magicality: u64,
-//!         #[clap(short = "c")]
+//!         #[structopt(short = "c")]
 //!         color: String
 //!     },
-//!     #[clap(name = "finish")]
-//!     Finish {
-//!         #[clap(short = "t")]
-//!         time: u32,
-//!         #[clap(subcommand)]  // Note that we mark a field as a subcommand
-//!         type: FinishType
-//!     }
+//!     #[structopt(name = "finish")]
+//!     Finish(Finish),
 //! }
 //!
-//! #[derive(ClapApp)]
+//! // Subcommand can also be externalized by using a 1-uple enum variant
+//! #[derive(StructOpt)]
+//! struct Finish {
+//!     #[structopt(short = "t")]
+//!     time: u32,
+//!     #[structopt(subcommand)]  // Note that we mark a field as a subcommand
+//!     finish_type: FinishType
+//! }
+//!
+//! // subsubcommand!
+//! #[derive(StructOpt)]
 //! enum FinishType {
-//!     #[clap(name = "glaze")]
+//!     #[structopt(name = "glaze")]
 //!     Glaze {
 //!         applications: u32
 //!     },
-//!     #[clap(name = "powder")]
+//!     #[structopt(name = "powder")]
 //!     Powder {
 //!         flavor: String,
 //!         dips: u32
@@ -199,9 +262,9 @@
 //! }
 //! ```
 //!
-//! Marking a field with `clap(subcommand)` will add the subcommands of the
+//! Marking a field with `structopt(subcommand)` will add the subcommands of the
 //! designated enum to the current `clap::App`. The designated enum *must* also
-//! be derived `ClapApp`. So the above example would take the following
+//! be derived `StructOpt`. So the above example would take the following
 //! commands:
 //!
 //! + `make-cookie pound 50`
@@ -212,16 +275,18 @@
 //!
 //! A nested subcommand can be marked optional:
 //!
-//! ```ignore
-//! #[derive(ClapApp)]
-//! #[clap(name = "foo")]
+//! ```
+//! # #[macro_use] extern crate structopt;
+//! # fn main() {}
+//! #[derive(StructOpt)]
+//! #[structopt(name = "foo")]
 //! struct Foo {
 //!     file: String,
-//!     #[clap(subcommand)]
+//!     #[structopt(subcommand)]
 //!     cmd: Option<Command>
 //! }
 //!
-//! #[derive(ClapApp)]
+//! #[derive(StructOpt)]
 //! enum Command {
 //!     Bar,
 //!     Baz,
@@ -229,13 +294,49 @@
 //! }
 //! ```
 //!
+//! ## Flattening
+//!
+//! It can sometimes be useful to group related arguments in a substruct,
+//! while keeping the command-line interface flat. In these cases you can mark
+//! a field as `flatten` and give it another type that derives `StructOpt`:
+//!
+//! ```
+//! # #[macro_use] extern crate structopt;
+//! # use structopt::StructOpt;
+//! # fn main() {}
+//! #[derive(StructOpt)]
+//! struct Cmdline {
+//!     #[structopt(short = "v", help = "switch on verbosity")]
+//!     verbose: bool,
+//!     #[structopt(flatten)]
+//!     daemon_opts: DaemonOpts,
+//! }
+//!
+//! #[derive(StructOpt)]
+//! struct DaemonOpts {
+//!     #[structopt(short = "u", help = "daemon user")]
+//!     user: String,
+//!     #[structopt(short = "g", help = "daemon group")]
+//!     group: String,
+//! }
+//! ```
+//!
+//! In this example, the derived `Cmdline` parser will support the options `-v`,
+//! `-u` and `-g`.
+//!
+//! This feature also makes it possible to define a `StructOpt` struct in a
+//! library, parse the corresponding arguments in the main argument parser, and
+//! pass off this struct to a handler provided by that library.
+//!
 //! ## Custom string parsers
 //!
 //! If the field type does not have a `FromStr` implementation, or you would
 //! like to provide a custom parsing scheme other than `FromStr`, you may
 //! provide a custom string parser using `parse(...)` like this:
 //!
-//! ```ignore
+//! ```
+//! # #[macro_use] extern crate structopt;
+//! # fn main() {}
 //! use std::num::ParseIntError;
 //! use std::path::PathBuf;
 //!
@@ -243,16 +344,16 @@
 //!     u32::from_str_radix(src, 16)
 //! }
 //!
-//! #[derive(ClapApp)]
+//! #[derive(StructOpt)]
 //! struct HexReader {
-//!     #[clap(short = "n", parse(try_from_str = "parse_hex"))]
+//!     #[structopt(short = "n", parse(try_from_str = "parse_hex"))]
 //!     number: u32,
-//!     #[clap(short = "o", parse(from_os_str))]
+//!     #[structopt(short = "o", parse(from_os_str))]
 //!     output: PathBuf,
 //! }
 //! ```
 //!
-//! There are four kinds custom string parsers:
+//! There are five kinds of custom parsers:
 //!
 //! | Kind              | Signature                             | Default                         |
 //! |-------------------|---------------------------------------|---------------------------------|
@@ -260,9 +361,16 @@
 //! | `try_from_str`    | `fn(&str) -> Result<T, E>`            | `::std::str::FromStr::from_str` |
 //! | `from_os_str`     | `fn(&OsStr) -> T`                     | `::std::convert::From::from`    |
 //! | `try_from_os_str` | `fn(&OsStr) -> Result<T, OsString>`   | (no default function)           |
+//! | `from_occurrences`| `fn(u64) -> T`                        | `value as T`                    |
 //!
-//! When supplying a custom string parser, `bool` and `u64` will not be treated
-//! specially:
+//! The `from_occurrences` parser is special. Using `parse(from_occurrences)`
+//! results in the _number of flags occurrences_ being stored in the relevant
+//! field or being passed to the supplied function. In other words, it converts
+//! something like `-vvv` to `3`. This is equivalent to
+//! `.takes_value(false).multiple(true)`. Note that the default parser can only
+//! be used with fields of integer types (`u8`, `usize`, `i64`, etc.).
+//!
+//! When supplying a custom string parser, `bool` will not be treated specially:
 //!
 //! Type        | Effect            | Added method call to `clap::Arg`
 //! ------------|-------------------|--------------------------------------
