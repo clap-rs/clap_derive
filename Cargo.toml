@@ -21,11 +21,12 @@ travis-ci = { repository = "https://github.com/kbknapp/clap-derive" }
 appveyor = { repository = "https://github.com/kbknapp/clap-derive", service = "github" }
 
 [dependencies]
-clap = {version = "2", features = ["unstable"]}
+clap = {features = ["unstable"], path = "../clap"}
 quote = "*"
 syn = "*"
 error-chain = "*"
 clippy    = { version = "~0.0.174", optional = true }
+proc-macro2 = "0.4"
 
 [dev-dependencies]
 
@@ -65,14 +66,6 @@ debug = false
 rpath = false
 lto = true
 debug-assertions = false
-
-[profile.doc]
-opt-level = 0
-debug = true
-rpath = false
-lto = false
-debug-assertions = true
-codegen-units = 4
 
 [package.metadata.docs.rs]
 features = ["doc"]

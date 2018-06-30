@@ -39,7 +39,10 @@ pub(crate) fn sub_type(t: &syn::Ty) -> Option<&syn::Ty> {
     match *segs.last().unwrap() {
         syn::PathSegment {
             parameters:
-                syn::PathParameters::AngleBracketed(syn::AngleBracketedParameterData { ref types, .. }),
+                syn::PathParameters::AngleBracketed(syn::PathParameters::AngleBracketedParameterData {
+                    ref types,
+                    ..
+                }),
             ..
         } if !types.is_empty() =>
         {

@@ -8,8 +8,8 @@
 
 use proc_macro2::{Span, TokenStream};
 use std::{env, mem};
+use syn;
 use syn::Type::Path;
-use syn::{self, Attribute, Ident, LitStr, MetaList, MetaNameValue, TypePath};
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Kind {
@@ -82,10 +82,10 @@ impl Attrs {
             }),
         }
     }
-    fn push_attrs(&mut self, attrs: &[Attribute]) {
-        use Lit::*;
-        use Meta::*;
-        use NestedMeta::*;
+    fn push_attrs(&mut self, attrs: &[syn::Attribute]) {
+        use syn::Lit::*;
+        use syn::Meta::*;
+        use syn::NestedMeta::*;
 
         let iter = attrs
             .iter()
@@ -109,16 +109,16 @@ impl Attrs {
             });
         for attr in iter {
             match attr {
-                NameValue(MetaNameValue {
+                NameValue(syn::MetaNameValue {
                     ident,
                     lit: Str(value),
                     ..
                 }) => self.push_str_method(&ident.to_string(), &value.value()),
-                NameValue(MetaNameValue { ident, lit, .. }) => self.methods.push(Method {
+                NameValue(syn::MetaNameValue { ident, lit, .. }) => self.methods.push(Method {
                     name: ident.to_string(),
                     args: quote!(#lit),
                 }),
-                List(MetaList {
+                List(syn::MetaList {
                     ref ident,
                     ref nested,
                     ..
@@ -129,7 +129,7 @@ impl Attrs {
                     }
                     self.has_custom_parser = true;
                     self.parser = match nested[0] {
-                        Meta(NameValue(MetaNameValue {
+                        Meta(NameValue(syn::MetaNameValue {
                             ref ident,
                             lit: Str(ref v),
                             ..
@@ -139,7 +139,7 @@ impl Attrs {
                             (parser, quote!(#function))
                         }
                         Meta(Word(ref i)) => {
-                            use Parser::*;
+                            use self::Parser::*;
                             let parser = i.to_string().parse().unwrap();
                             let function = match parser {
                                 FromStr => quote!(::std::convert::From::from),
@@ -155,7 +155,7 @@ impl Attrs {
                         ref l @ _ => panic!("unknown value parser specification: {}", quote!(#l)),
                     };
                 }
-                List(MetaList {
+                List(syn::MetaList {
                     ref ident,
                     ref nested,
                     ..
@@ -163,7 +163,7 @@ impl Attrs {
                 {
                     for method in nested {
                         match *method {
-                            Meta(NameValue(MetaNameValue {
+                            Meta(NameValue(syn::MetaNameValue {
                                 ref ident,
                                 lit: Str(ref v),
                                 ..
@@ -182,7 +182,7 @@ impl Attrs {
             }
         }
     }
-    fn push_raw_method(&mut self, name: &str, args: &LitStr) {
+    fn push_raw_method(&mut self, name: &str, args: &syn::LitStr) {
         let ts: TokenStream = args.value().parse().expect(&format!(
             "bad parameter {} = {}: the parameter must be valid rust code",
             name,
@@ -193,7 +193,7 @@ impl Attrs {
             args: quote!(#(#ts)*),
         })
     }
-    fn push_doc_comment(&mut self, attrs: &[Attribute], name: &str) {
+    fn push_doc_comment(&mut self, attrs: &[syn::Attribute], name: &str) {
         let doc_comments: Vec<_> = attrs
             .iter()
             .filter_map(|attr| {
@@ -204,9 +204,9 @@ impl Attrs {
                 }
             })
             .filter_map(|attr| {
-                use Lit::*;
-                use Meta::*;
-                if let NameValue(MetaNameValue {
+                use syn::Lit::*;
+                use syn::Meta::*;
+                if let NameValue(syn::MetaNameValue {
                     ident, lit: Str(s), ..
                 }) = attr
                 {
@@ -245,7 +245,7 @@ impl Attrs {
             args: quote!(#arg),
         });
     }
-    pub fn from_struct(attrs: &[Attribute], name: String) -> Attrs {
+    pub fn from_struct(attrs: &[syn::Attribute], name: String) -> Attrs {
         let mut res = Self::new(name);
         let attrs_with_env = [
             ("version", "CARGO_PKG_VERSION"),
@@ -276,7 +276,7 @@ impl Attrs {
         }
     }
     fn ty_from_field(ty: &syn::Type) -> Ty {
-        if let Path(TypePath {
+        if let Path(syn::TypePath {
             path: syn::Path { ref segments, .. },
             ..
         }) = *ty
@@ -360,18 +360,12 @@ impl Attrs {
     }
     pub fn methods(&self) -> TokenStream {
         let methods = self.methods.iter().map(|&Method { ref name, ref args }| {
-            let name = Ident::new(&name, Span::call_site());
+            let name = syn::Ident::new(&name, Span::call_site());
             quote!( .#name(#args) )
         });
         quote!( #(#methods)* )
     }
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-    pub fn parser(&self) -> &(Parser, TokenStream) {
-        &self.parser
-    }
-    pub fn kind(&self) -> Kind {
-        self.kind
-    }
+    pub fn name(&self) -> &str { &self.name }
+    pub fn parser(&self) -> &(Parser, TokenStream) { &self.parser }
+    pub fn kind(&self) -> Kind { self.kind }
 }
