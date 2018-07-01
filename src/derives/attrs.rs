@@ -1,10 +1,16 @@
-// Copyright 2018 Guillaume Pinot (@TeXitoi) <texitoi@texitoi.eu>
+// Copyright 2018 Guillaume Pinot (@TeXitoi) <texitoi@texitoi.eu>,
+// Andrew Hobden (@hoverbear) <andrew@hoverbear.org>, and
+// Kevin Knapp (@kbknapp) <kbknapp@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
 // <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
+//
+// This work was derived from
+// [`structopt@master#d983649822`](https://github.com/TeXitoi/structopt/commit/d983649822b32bb6c11fb3ef9891f66258a6e5c9)
+// which is licensed under the MIT/Apache 2.0.
 
 use proc_macro2::{Span, TokenStream};
 use std::{env, mem};
@@ -12,20 +18,20 @@ use syn;
 use syn::Type::Path;
 
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub enum Kind {
+pub(crate) enum Kind {
     Arg(Ty),
     Subcommand(Ty),
     FlattenStruct,
 }
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub enum Ty {
+pub(crate) enum Ty {
     Bool,
     Vec,
     Option,
     Other,
 }
 #[derive(Debug)]
-pub struct Attrs {
+pub(crate) struct Attrs {
     name: String,
     methods: Vec<Method>,
     parser: (Parser, TokenStream),

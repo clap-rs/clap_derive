@@ -1,3 +1,14 @@
+// Copyright 2018 Guillaume Pinot (@TeXitoi) <texitoi@texitoi.eu>,
+// Andrew Hobden (@hoverbear) <andrew@hoverbear.org>, and
+// Kevin Knapp (@kbknapp) <kbknapp@gmail.com>
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
+/*
 use std::env;
 
 use syn;
@@ -11,8 +22,8 @@ pub(crate) enum Ty {
     Other,
 }
 
-pub(crate) fn ty(t: &syn::Ty) -> Ty {
-    if let syn::Ty::Path(
+pub(crate) fn ty(t: &Ty) -> Ty {
+    if let Ty::Path(
         None,
         syn::Path {
             segments: ref segs, ..
@@ -31,9 +42,9 @@ pub(crate) fn ty(t: &syn::Ty) -> Ty {
     }
 }
 
-pub(crate) fn sub_type(t: &syn::Ty) -> Option<&syn::Ty> {
+pub(crate) fn sub_type(t: &Ty) -> Option<&Ty> {
     let segs = match *t {
-        syn::Ty::Path(None, syn::Path { ref segments, .. }) => segments,
+        Ty::Path(None, syn::Path { ref segments, .. }) => segments,
         _ => return None,
     };
     match *segs.last().unwrap() {
@@ -138,3 +149,4 @@ pub(crate) fn from_attr_or_env(attrs: &[(syn::Ident, syn::Lit)], key: &str, env:
         .map(|&(_, ref l)| l.clone())
         .unwrap_or_else(|| syn::Lit::Str(default, syn::StrStyle::Cooked))
 }
+*/

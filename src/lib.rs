@@ -1,10 +1,16 @@
-// Copyright 2018 Guillaume Pinot (@TeXitoi) <texitoi@texitoi.eu>
+// Copyright 2018 Guillaume Pinot (@TeXitoi) <texitoi@texitoi.eu>,
+// Andrew Hobden (@hoverbear) <andrew@hoverbear.org>, and
+// Kevin Knapp (@kbknapp) <kbknapp@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
 // <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
+//
+// This work was derived from
+// [`structopt@master#d983649822`](https://github.com/TeXitoi/structopt/commit/d983649822b32bb6c11fb3ef9891f66258a6e5c9)
+// which is licensed under the MIT/Apache 2.0.
 
 //! This crate defines the `StructOpt` trait and its custom derrive.
 //!
@@ -384,7 +390,8 @@
 
 #![recursion_limit = "256"]
 #![deny(
-    missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
+    //missing_docs, 
+    missing_debug_implementations, missing_copy_implementations, trivial_casts,
     unused_import_braces, unused_allocation, unused_qualifications, trivial_numeric_casts
 )]
 #![cfg_attr(not(any(feature = "lints", feature = "nightly")), forbid(unstable_features))]
@@ -394,8 +401,6 @@
 // #![cfg_attr(feature = "lints", deny(warnings))]
 
 extern crate clap;
-#[macro_use]
-extern crate error_chain;
 extern crate proc_macro;
 #[macro_use]
 extern crate quote;
@@ -403,33 +408,20 @@ extern crate syn;
 
 extern crate proc_macro2;
 
-use errors::*;
+// use errors::*;
 
-mod arg_enum;
 mod derives;
 mod errors;
-mod helpers;
-
-/// Parses the inputted stream.
-fn derive<F>(input: proc_macro::TokenStream, impl_fn: F) -> Result<proc_macro::TokenStream>
-where
-    F: Fn(&syn::DeriveInput) -> proc_macro::TokenStream,
-{
-    // Construct a string representation of the type definition
-    // let as_string = input.to_string();
-    // Parse the string representation
-    let ast = syn::parse(input).map_err(ErrorKind::ParseError)?;
-    let generated_output: proc_macro::TokenStream = impl_fn(&ast);
-    Ok(generated_output.parse().map_err(ErrorKind::ProcLexError)?)
-}
+// mod helpers;
 
 /// It is required to have this seperate and specificly defined.
 #[proc_macro_derive(ArgEnum, attributes(case_sensitive))]
-pub fn derive_arg_enum(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn arg_enum(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     // @TODO @p4: unwrap->expect: panic! is good because this
     // all happens at compile time
 
-    derive(input, arg_enum::impl_arg_enum).unwrap()
+    let ast = syn::parse(input).unwrap(); // .map_err(ErrorKind::ParseError)?;
+    derives::impl_arg_enum(&ast).into()
 }
 
 /// Generates the `ClapApp` impl.
@@ -438,7 +430,8 @@ pub fn clap(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     // @TODO @p4: unwrap->expect: panic! is good because this
     // all happens at compile time
 
-    derive(input, derives::impl_clap).unwrap()
+    let ast = syn::parse(input).unwrap(); //.map_err(ErrorKind::ParseError)?;
+    derives::impl_clap(&ast).into()
 }
 
 /// Generates the `ClapApp` impl.
@@ -447,7 +440,8 @@ pub fn parse(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     // @TODO @p4: unwrap->expect: panic! is good because this
     // all happens at compile time
 
-    derive(input, derives::impl_parse).unwrap()
+    let ast = syn::parse(input).unwrap(); //.map_err(ErrorKind::ParseError)?;
+    derives::impl_parse(&ast).into()
 }
 
 /// Generates the `ClapApp` impl.
@@ -456,7 +450,8 @@ pub fn into_app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     // @TODO @p4: unwrap->expect: panic! is good because this
     // all happens at compile time
 
-    derive(input, derives::impl_into_app).unwrap()
+    let ast = syn::parse(input).unwrap(); //.map_err(ErrorKind::ParseError)?;
+    derives::impl_into_app(&ast).into()
 }
 
 /// Generates the `ClapApp` impl.
@@ -465,5 +460,6 @@ pub fn from_argmatches(input: proc_macro::TokenStream) -> proc_macro::TokenStrea
     // @TODO @p4: unwrap->expect: panic! is good because this
     // all happens at compile time
 
-    derive(input, derives::impl_from_argmatches).unwrap()
+    let ast = syn::parse(input).unwrap(); //.map_err(ErrorKind::ParseError)?;
+    derives::impl_from_argmatches(&ast).into()
 }
