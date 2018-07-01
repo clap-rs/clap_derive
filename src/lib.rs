@@ -383,8 +383,10 @@
 //! side-effect-free.
 
 #![recursion_limit = "256"]
-#![deny(missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
-        unused_import_braces, unused_allocation, unused_qualifications, trivial_numeric_casts)]
+#![deny(
+    missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
+    unused_import_braces, unused_allocation, unused_qualifications, trivial_numeric_casts
+)]
 #![cfg_attr(not(any(feature = "lints", feature = "nightly")), forbid(unstable_features))]
 #![cfg_attr(feature = "lints", feature(plugin))]
 #![cfg_attr(feature = "lints", plugin(clippy))]
@@ -399,23 +401,25 @@ extern crate proc_macro;
 extern crate quote;
 extern crate syn;
 
+extern crate proc_macro2;
+
 use errors::*;
 
 mod arg_enum;
-mod helpers;
+mod derives;
 mod errors;
-mod clap_app;
+mod helpers;
 
 /// Parses the inputted stream.
-fn derive<F>(input: &proc_macro::TokenStream, impl_fn: F) -> Result<proc_macro::TokenStream>
+fn derive<F>(input: proc_macro::TokenStream, impl_fn: F) -> Result<proc_macro::TokenStream>
 where
-    F: Fn(&syn::DeriveInput) -> Result<quote::Tokens>,
+    F: Fn(&syn::DeriveInput) -> proc_macro::TokenStream,
 {
     // Construct a string representation of the type definition
-    let as_string = input.to_string();
+    // let as_string = input.to_string();
     // Parse the string representation
-    let ast = syn::parse_derive_input(&as_string).map_err(ErrorKind::ParseError)?;
-    let generated_output = impl_fn(&ast)?;
+    let ast = syn::parse(input).map_err(ErrorKind::ParseError)?;
+    let generated_output: proc_macro::TokenStream = impl_fn(&ast);
     Ok(generated_output.parse().map_err(ErrorKind::ProcLexError)?)
 }
 
@@ -425,14 +429,41 @@ pub fn derive_arg_enum(input: proc_macro::TokenStream) -> proc_macro::TokenStrea
     // @TODO @p4: unwrap->expect: panic! is good because this
     // all happens at compile time
 
-    derive(&input, arg_enum::impl_arg_enum).unwrap()
+    derive(input, arg_enum::impl_arg_enum).unwrap()
 }
 
 /// Generates the `ClapApp` impl.
-#[proc_macro_derive(ClapApp, attributes(clap))]
-pub fn clap_app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+#[proc_macro_derive(Clap, attributes(clap))]
+pub fn clap(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     // @TODO @p4: unwrap->expect: panic! is good because this
     // all happens at compile time
 
-    derive(&input, clap_app::impl_clap_app).unwrap()
+    derive(input, derives::impl_clap).unwrap()
+}
+
+/// Generates the `ClapApp` impl.
+#[proc_macro_derive(Parse, attributes(clap))]
+pub fn parse(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    // @TODO @p4: unwrap->expect: panic! is good because this
+    // all happens at compile time
+
+    derive(input, derives::impl_parse).unwrap()
+}
+
+/// Generates the `ClapApp` impl.
+#[proc_macro_derive(IntoApp, attributes(clap))]
+pub fn into_app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    // @TODO @p4: unwrap->expect: panic! is good because this
+    // all happens at compile time
+
+    derive(input, derives::impl_into_app).unwrap()
+}
+
+/// Generates the `ClapApp` impl.
+#[proc_macro_derive(FromArgMatches, attributes(clap))]
+pub fn from_argmatches(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    // @TODO @p4: unwrap->expect: panic! is good because this
+    // all happens at compile time
+
+    derive(input, derives::impl_from_argmatches).unwrap()
 }
