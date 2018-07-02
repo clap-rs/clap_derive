@@ -400,7 +400,6 @@
 
 // #![cfg_attr(feature = "lints", deny(warnings))]
 
-extern crate clap;
 extern crate proc_macro;
 #[macro_use]
 extern crate quote;

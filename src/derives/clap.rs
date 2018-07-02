@@ -50,20 +50,20 @@ fn impl_clap_for_struct(
     fields: &Punctuated<syn::Field, Comma>,
     attrs: &[syn::Attribute],
 ) -> proc_macro2::TokenStream {
-    let into_app_impl = into_app::gen_into_app(attrs);
+    let into_app_impl = into_app::gen_into_app_impl(name, attrs);
     let build_app_fn = gen_build_app(fields);
     let from_argmatches_impl = from_argmatches::gen_from_argmatches(name, fields);
     let parse_impl = parse::gen_parse_impl(name);
 
     quote! {
-        #[allow(unused_variables)]
-        impl ::clap_derive::clap::Clap for #name { }
-
         #into_app_impl
 
         #from_argmatches_impl
 
         #parse_impl
+
+        #[allow(unused_variables)]
+        impl ::clap::Clap for #name { }
 
         #[allow(dead_code, unreachable_code)]
         #[doc(hidden)]
@@ -80,13 +80,14 @@ fn gen_build_app(fields: &Punctuated<syn::Field, Comma>) -> proc_macro2::TokenSt
     let builder = gen_builder(fields, &app_var);
     quote! {
         pub fn augment_clap<'a, 'b>(
-            #app_var: ::clap_derive::clap::App<'a, 'b>
-        ) -> ::clap_derive::clap::App<'a, 'b> {
+            #app_var: ::clap::App<'a, 'b>
+        ) -> ::clap::App<'a, 'b> {
             #builder
         }
     }
 }
 
+// @TODO: remove unnecessary builder methods
 /// Generate a block of code to add arguments/subcommands corresponding to
 /// the `fields` in custom struct.
 fn gen_builder(
@@ -107,7 +108,7 @@ fn gen_builder(
                 } else {
                     quote! {
                         let #app_var = #app_var.setting(
-                            ::clap_derive::clap::AppSettings::SubcommandRequiredElseHelp
+                            ::clap::AppSettings::SubcommandRequiredElseHelp
                         );
                     }
                 };
@@ -136,7 +137,7 @@ fn gen_builder(
                 Some(quote! {
                     let #app_var = <#ty>::augment_clap(#app_var);
                     let #app_var = if <#ty>::is_subcommand() {
-                        #app_var.setting(::clap_derive::clap::AppSettings::SubcommandRequiredElseHelp)
+                        #app_var.setting(::clap::AppSettings::SubcommandRequiredElseHelp)
                     } else {
                         #app_var
                     };
@@ -178,7 +179,7 @@ fn gen_builder(
                 let name = attrs.name();
                 Some(quote!{
                     let #app_var = #app_var.arg(
-                        ::clap_derive::clap::Arg::with_name(#name)
+                        ::clap::Arg::with_name(#name)
                             #modifier
                             #methods
                     );
@@ -197,9 +198,9 @@ fn gen_builder(
 fn gen_clap_enum(enum_attrs: &[syn::Attribute]) -> proc_macro2::TokenStream {
     let built_app = into_app::gen_app(enum_attrs);
     quote! {
-        fn clap<'a, 'b>() -> ::clap_derive::clap::App<'a, 'b> {
+        fn clap<'a, 'b>() -> ::clap::App<'a, 'b> {
             let app = #built_app
-                .setting(::clap_derive::clap::AppSettings::SubcommandRequiredElseHelp);
+                .setting(::clap::AppSettings::SubcommandRequiredElseHelp);
             Self::augment_clap(app)
         }
     }
@@ -222,7 +223,7 @@ fn gen_augment_clap_enum(variants: &Punctuated<syn::Variant, Comma>) -> proc_mac
                         let #app_var = <#ty>::augment_clap(#app_var);
                         if <#ty>::is_subcommand() {
                             #app_var.setting(
-                                ::clap_derive::clap::AppSettings::SubcommandRequiredElseHelp
+                                ::clap::AppSettings::SubcommandRequiredElseHelp
                             )
                         } else {
                             #app_var
@@ -237,7 +238,7 @@ fn gen_augment_clap_enum(variants: &Punctuated<syn::Variant, Comma>) -> proc_mac
         let from_attrs = attrs.methods();
         quote! {
             .subcommand({
-                let #app_var = ::clap_derive::clap::SubCommand::with_name(#name);
+                let #app_var = ::clap::SubCommand::with_name(#name);
                 let #app_var = #arg_block;
                 #app_var#from_attrs
             })
@@ -246,8 +247,8 @@ fn gen_augment_clap_enum(variants: &Punctuated<syn::Variant, Comma>) -> proc_mac
 
     quote! {
         pub fn augment_clap<'a, 'b>(
-            app: ::clap_derive::clap::App<'a, 'b>
-        ) -> ::clap_derive::clap::App<'a, 'b> {
+            app: ::clap::App<'a, 'b>
+        ) -> ::clap::App<'a, 'b> {
             app #( #subcommands )*
         }
     }
@@ -255,7 +256,7 @@ fn gen_augment_clap_enum(variants: &Punctuated<syn::Variant, Comma>) -> proc_mac
 
 fn gen_from_clap_enum(name: &syn::Ident) -> proc_macro2::TokenStream {
     quote! {
-        fn from_clap(matches: &::clap_derive::clap::ArgMatches) -> Self {
+        fn from_clap(matches: &::clap::ArgMatches) -> Self {
             <#name>::from_subcommand(matches.subcommand())
                 .unwrap()
         }
@@ -277,7 +278,7 @@ fn gen_from_subcommand(
             Unit => quote!(),
             Unnamed(ref fields) if fields.unnamed.len() == 1 => {
                 let ty = &fields.unnamed[0];
-                quote!( ( <#ty as ::clap_derive::clap::Clap>::from_argmatches(matches) ) )
+                quote!( ( <#ty as ::clap::Clap>::from_argmatches(matches) ) )
             }
             Unnamed(..) => panic!("{}: tuple enum are not supported", variant.ident),
         };
@@ -290,7 +291,7 @@ fn gen_from_subcommand(
 
     quote! {
         pub fn from_subcommand<'a, 'b>(
-            sub: (&'b str, Option<&'b ::clap_derive::clap::ArgMatches<'a>>)
+            sub: (&'b str, Option<&'b ::clap::ArgMatches<'a>>)
         ) -> Option<Self> {
             match sub {
                 #( #match_arms ),*,
@@ -311,7 +312,7 @@ fn impl_clap_for_enum(
     let from_subcommand = gen_from_subcommand(name, variants);
 
     quote! {
-        impl ::clap_derive::clap::Clap for #name {
+        impl ::clap::Clap for #name {
             #clap
             #from_clap
         }

@@ -16,30 +16,40 @@ use derives::attrs::Attrs;
 // Generates the clap::IntoApp impl
 pub fn impl_into_app(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let struct_name = &input.ident;
-    let into_app_fn = gen_into_app(&input.attrs);
+    let into_app_impl = gen_into_app_impl(&input.ident, &input.attrs);
+
+    quote! { #into_app_impl }
+}
+
+pub fn gen_into_app_impl(
+    struct_name: &syn::Ident,
+    struct_attrs: &[syn::Attribute],
+) -> proc_macro2::TokenStream {
+    let into_app_fn = gen_into_app_fn(struct_name, struct_attrs);
 
     quote! {
         #[allow(unused_variables)]
-        impl ::clap_derive::clap::IntoApp for #struct_name {
+        impl ::clap::IntoApp for #struct_name {
             #into_app_fn
-            // #clap
-            // #from_clap
         }
 
-        impl From<#struct_name> for ::clap_derive::clap::App {
-            fn from(&self) -> ::clap_derive::clap::App {
-                <self as ::clap_derive::clap::IntoApp>::into_app()
+        impl<'a, 'b> Into<::clap::App<'a, 'b>> for #struct_name {
+            fn into(self) -> ::clap::App<'a, 'b> {
+                <Self as ::clap::IntoApp>::into_app()
             }
         }
     }
 }
 
-pub(crate) fn gen_into_app(struct_attrs: &[syn::Attribute]) -> proc_macro2::TokenStream {
+pub(crate) fn gen_into_app_fn(
+    struct_name: &syn::Ident,
+    struct_attrs: &[syn::Attribute],
+) -> proc_macro2::TokenStream {
     let built_app = gen_app(struct_attrs);
     quote! {
-        fn into_app<'a, 'b>() -> ::clap_derive::clap::App<'a, 'b> {
+        fn into_app<'a, 'b>() -> ::clap::App<'a, 'b> {
             let app = #built_app;
-            Self::augment_clap(app)
+            #struct_name::augment_clap(app)
         }
     }
 }
@@ -51,5 +61,5 @@ pub(crate) fn gen_app(attrs: &[syn::Attribute]) -> proc_macro2::TokenStream {
     let attrs = Attrs::from_struct(attrs, name);
     let name = attrs.name();
     let methods = attrs.methods();
-    quote!(::clap_derive::clap::App::new(#name)#methods)
+    quote!(::clap::App::new(#name)#methods)
 }

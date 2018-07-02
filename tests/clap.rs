@@ -1,3 +1,4 @@
+#![feature(box_syntax, test, fmt_internals)]
 // Copyright 2018 Guillaume Pinot (@TeXitoi) <texitoi@texitoi.eu>,
 // Andrew Hobden (@hoverbear) <andrew@hoverbear.org>, and
 // Kevin Knapp (@kbknapp) <kbknapp@gmail.com>
@@ -11,13 +12,10 @@
 // This work was derived from
 // [`structopt@master#d983649822`](https://github.com/TeXitoi/structopt/commit/d983649822b32bb6c11fb3ef9891f66258a6e5c9)
 // which is licensed under the MIT/Apache 2.0.
-extern crate clap;
 #[macro_use]
-extern crate clap_derive;
+extern crate clap;
 
-use clap_derive::*;
-
-use clap::{App, Clap};
+use clap::{App, Clap, Parse};
 
 #[derive(Clap)]
 #[clap(name = "myapp", version = "1.0")]
@@ -28,7 +26,7 @@ struct MyApp {
     debug: bool,
 
     /// Verbose mode
-    #[clap(short = "v", long = "verbose")]
+    #[clap(short = "v", long = "verbose", parse(from_occurrences))]
     verbose: u64,
 
     /// Set speed
@@ -49,11 +47,11 @@ struct MyApp {
 }
 
 #[test]
-fn clapapp() {
-    let app: App = MyApp::parse_from(vec!["myapp", "-v", "--speed=20", "some", "files"]);
+fn basic_clap() {
+    let app = <MyApp as Parse>::parse_from(vec!["myapp", "-vvv", "--speed=20", "some", "files"]);
 
     assert!(!app.debug);
-    assert!(app.verbose);
-    assert_eq!(app.speed, 20);
+    assert_eq!(app.verbose, 3);
+    assert_eq!(app.speed, 20.0);
     assert_eq!(app.files, &["some", "files"]);
 }

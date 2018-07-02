@@ -18,6 +18,6 @@ pub fn impl_parse(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
 pub fn gen_parse_impl(struct_name: &syn::Ident) -> proc_macro2::TokenStream {
     quote! {
-        impl ::clap_derive::clap::Parse for #struct_name { }
+        impl ::clap::Parse for #struct_name { }
     }
 }

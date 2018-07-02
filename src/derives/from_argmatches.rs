@@ -42,15 +42,15 @@ pub(crate) fn gen_from_argmatches(
     let field_block = gen_constructor(fields);
 
     quote! {
-        impl ::clap_derive::clap::FromArgMatches for #struct_name {
-            fn from_argmatches(matches: &::clap_derive::clap::ArgMatches) -> Self {
+        impl ::clap::FromArgMatches for #struct_name {
+            fn from_argmatches<'a>(matches: ::clap::ArgMatches<'a>) -> Self {
                 #struct_name #field_block
             }
         }
 
-        impl From<::clap_derive::clap::ArgMatches> for #struct_name {
-            fn from(&self) -> ::clap_derive::clap::ArgMatches {
-                #struct_name #field_block
+        impl<'a> From<::clap::ArgMatches<'a>> for #struct_name {
+            fn from(m: ::clap::ArgMatches<'a>) -> Self {
+                <Self as ::clap::FromArgMatches>::from_argmatches(m)
             }
         }
     }
@@ -74,9 +74,7 @@ pub(crate) fn gen_constructor(
                 };
                 quote!(#field_name: <#subcmd_type>::from_subcommand(matches.subcommand())#unwrapper)
             }
-            Kind::FlattenStruct => {
-                quote!(#field_name: ::clap_derive::clap::Clap::from_argmatches(matches))
-            }
+            Kind::FlattenStruct => quote!(#field_name: ::clap::Clap::from_argmatches(matches)),
             Kind::Arg(ty) => {
                 use self::Parser::*;
                 let (value_of, values_of, parse) = match *attrs.parser() {
