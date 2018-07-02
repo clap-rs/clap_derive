@@ -13,6 +13,7 @@ use syn;
 
 use derives::attrs::Attrs;
 
+// Generates the clap::IntoApp impl
 pub fn impl_into_app(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let struct_name = &input.ident;
     let into_app_fn = gen_into_app(&input.attrs);
@@ -23,6 +24,12 @@ pub fn impl_into_app(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
             #into_app_fn
             // #clap
             // #from_clap
+        }
+
+        impl From<#struct_name> for ::clap_derive::clap::App {
+            fn from(&self) -> ::clap_derive::clap::App {
+                <self as ::clap_derive::clap::IntoApp>::into_app()
+            }
         }
     }
 }

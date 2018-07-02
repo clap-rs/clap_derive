@@ -23,6 +23,7 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 
 use derives;
+use derives::from_argmatches;
 use derives::into_app;
 use derives::parse;
 
@@ -51,16 +52,16 @@ fn impl_clap_for_struct(
 ) -> proc_macro2::TokenStream {
     let into_app_impl = into_app::gen_into_app(attrs);
     let build_app_fn = gen_build_app(fields);
-    let parse_impl = parse::gen_parse(name, fields);
+    let from_argmatches_impl = from_argmatches::gen_from_argmatches(name, fields);
+    let parse_impl = parse::gen_parse_impl(name);
 
     quote! {
         #[allow(unused_variables)]
         impl ::clap_derive::clap::Clap for #name { }
-        //     #clap
-        //     #from_clap
-        // }
 
         #into_app_impl
+
+        #from_argmatches_impl
 
         #parse_impl
 
@@ -272,7 +273,7 @@ fn gen_from_subcommand(
         let sub_name = attrs.name();
         let variant_name = &variant.ident;
         let constructor_block = match variant.fields {
-            Named(ref fields) => parse::gen_constructor(&fields.named),
+            Named(ref fields) => from_argmatches::gen_constructor(&fields.named),
             Unit => quote!(),
             Unnamed(ref fields) if fields.unnamed.len() == 1 => {
                 let ty = &fields.unnamed[0];
