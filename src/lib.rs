@@ -408,6 +408,8 @@ extern crate syn;
 
 extern crate proc_macro2;
 
+// pub use clap::{ArgEnum, Clap, FromArgMatches, IntoApp, Parse};
+
 // use errors::*;
 
 mod derives;

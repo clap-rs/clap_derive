@@ -28,6 +28,7 @@ clippy    = { version = "~0.0.174", optional = true }
 proc-macro2 = "0.4"
 
 [dev-dependencies]
+clap = {features = ["unstable"], path = "../clap-rs"}
 
 [features]
 default     = []
