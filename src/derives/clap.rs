@@ -242,8 +242,6 @@ fn clap_impl_for_struct(
     let parse_fns = gen_parse_fns(name);
 
     quote! {
-        use ::clap::{FromArgMatches, IntoApp};
-
         #[allow(unused_variables)]
         impl ::clap::Clap for #name { }
 
