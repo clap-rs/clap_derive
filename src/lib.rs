@@ -25,7 +25,7 @@ extern crate proc_macro2;
 
 mod derives;
 
-/// It is required to have this seperate and specificly defined.
+/// It is required to have this separate and specifically defined.
 #[proc_macro_derive(ArgEnum, attributes(case_sensitive))]
 pub fn arg_enum(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input: syn::DeriveInput = syn::parse(input).unwrap();

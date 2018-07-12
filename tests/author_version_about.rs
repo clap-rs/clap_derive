@@ -17,6 +17,33 @@ extern crate clap;
 
 use clap::Clap;
 
+const NO_AUTHOR_VERSION: &str = "foo \n
+USAGE:
+    foo
+
+FLAGS:
+    -h, --help       
+            Prints help information
+
+    -V, --version    
+            Prints version information
+";
+
+const USE_ENV: &str = "clap_derive 0.3.0
+Guillaume Pinot <texitoi@texitoi.eu>, Kevin K. <kbknapp@gmail.com>, hoverbear <andrew@hoverbear.org>
+Parse command line argument by defining a struct, derive crate.
+
+USAGE:
+    clap_derive
+
+FLAGS:
+    -h, --help       
+            Prints help information
+
+    -V, --version    
+            Prints version information
+";
+
 #[test]
 fn no_author_version_about() {
     #[derive(Clap, PartialEq, Debug)]
@@ -27,7 +54,7 @@ fn no_author_version_about() {
     Opt::into_app().write_long_help(&mut output).unwrap();
     let output = String::from_utf8(output).unwrap();
 
-    assert!(output.starts_with("foo \n\nUSAGE:"));
+    assert_eq!(output, NO_AUTHOR_VERSION);
 }
 
 #[test]
@@ -39,7 +66,6 @@ fn use_env() {
     let mut output = Vec::new();
     Opt::into_app().write_long_help(&mut output).unwrap();
     let output = String::from_utf8(output).unwrap();
-    assert!(output.starts_with("structopt 0.2."));
-    assert!(output.contains("Guillaume Pinot <texitoi@texitoi.eu>, others"));
-    assert!(output.contains("Parse command line argument by defining a struct."));
+    println!("{}", output);
+    assert_eq!(output, USE_ENV);
 }
