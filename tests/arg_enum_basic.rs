@@ -18,7 +18,7 @@ use clap::{App, Arg};
 enum ArgChoice {
     Foo,
     Bar,
-    Baz,
+    Baz
 }
 
 #[test]
@@ -35,6 +35,16 @@ fn when_lowercase() {
     let t = value_t!(matches.value_of("arg"), ArgChoice);
     assert!(t.is_ok());
     assert_eq!(t.unwrap(), ArgChoice::Foo);
+}
+
+#[test]
+fn when_lowercase_derive() {
+    #[derive(Clap)]
+    struct Opt {
+        choice: ArgChoice,
+    }
+
+    assert_eq!(Opt::parse_from(&["opt", "foo"]).choice, ArgChoice::Foo);
 }
 
 #[test]

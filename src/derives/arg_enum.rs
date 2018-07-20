@@ -14,33 +14,32 @@ use syn::punctuated;
 use syn::token;
 
 pub fn derive_arg_enum(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
-    unimplemented!()
+    let from_str_block = impl_from_str(ast);
+    let variants_block = impl_variants(ast);
 
-    // let from_str_block = impl_from_str(ast)?;
-    // let variants_block = impl_variants(ast)?;
-
-    // quote! {
-    //     #from_str_block
-    //     #variants_block
-    // }
+    quote! {
+        #from_str_block
+        #variants_block
+    }
 }
 
-/*
 fn impl_from_str(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let ident = &ast.ident;
-    let is_case_sensitive = ast.attrs.iter().any(|v| v.name() == "case_sensitive");
-    let variants = variants(ast)?;
+    let is_case_sensitive = ast.attrs
+        .iter()
+        .any(|v| v.path.segments.iter().any(|s| s.ident == "case_sensitive"));
+    let variants = variants(ast);
 
     let strings = variants
         .iter()
-        .map(|ref variant| String::from(variant.ident.as_ref()))
+        .map(|variant| variant.ident.to_string())
         .collect::<Vec<_>>();
 
     // All of these need to be iterators.
     let ident_slice = [ident.clone()];
     let idents = ident_slice.iter().cycle();
 
-    let for_error_message = strings.clone();
+    let for_error_message = strings.join(", ");
 
     let condition_function_slice = [match is_case_sensitive {
         true => quote! { str::eq },
@@ -48,47 +47,44 @@ fn impl_from_str(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     }];
     let condition_function = condition_function_slice.iter().cycle();
 
-    Ok(quote! {
+    quote! {
         impl ::std::str::FromStr for #ident {
             type Err = String;
 
             fn from_str(input: &str) -> ::std::result::Result<Self, Self::Err> {
                 match input {
                     #(val if #condition_function(val, #strings) => Ok(#idents::#variants),)*
-                    _ => Err({
-                        let v = #for_error_message;
-                        format!("valid values: {}",
-                            v.join(" ,"))
-                    }),
+                    _ => Err(
+                        format!("valid values: {}", #for_error_message)
+                    ),
                 }
             }
         }
-    })
+    }
 }
 
 fn impl_variants(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let ident = &ast.ident;
-    let variants = variants(ast)?
-        .iter()
-        .map(|ref variant| String::from(variant.ident.as_ref()))
-        .collect::<Vec<_>>();
-    let length = variants.len();
+    let local_variants = variants(ast);
 
-    Ok(quote! {
+    quote! {
         impl #ident {
-            fn variants() -> [&'static str; #length] {
-                #variants
+            fn variants() -> impl ::std::iter::Iterator<Item = #ident> {
+                use ::std::str::FromStr;
+
+                #local_variants
+                    .iter()
+                    .map(|variant| FromStr::from_str(&variant.ident.to_string()).unwrap())
             }
         }
-    })
+    }
 }
 
 fn variants(ast: &syn::DeriveInput) -> &punctuated::Punctuated<syn::Variant, token::Comma> {
     use syn::Data::*;
 
     match ast.data {
-        Enum(ref data) => data.variants,
+        Enum(ref data) => &data.variants,
         _ => panic!("Only enums are supported for deriving the ArgEnum trait"),
     }
 }
-*/
