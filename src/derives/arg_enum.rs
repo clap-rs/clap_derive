@@ -25,7 +25,8 @@ pub fn derive_arg_enum(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
 fn impl_from_str(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let ident = &ast.ident;
-    let is_case_sensitive = ast.attrs
+    let is_case_sensitive = ast
+        .attrs
         .iter()
         .any(|v| v.path.segments.iter().any(|s| s.ident == "case_sensitive"));
     let variants = variants(ast);
@@ -67,17 +68,19 @@ fn impl_variants(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let ident = &ast.ident;
     let local_variants = variants(ast);
 
-    quote! {
+    let tokens = quote! {
         impl #ident {
             fn variants() -> impl ::std::iter::Iterator<Item = #ident> {
                 use ::std::str::FromStr;
 
                 #local_variants
                     .iter()
-                    .map(|variant| FromStr::from_str(&variant.ident.to_string()).unwrap())
+                    .map(|variant| #ident::from_str(&variant.ident.to_string()).unwrap())
             }
         }
-    }
+    };
+    println!("{}", tokens);
+    tokens
 }
 
 fn variants(ast: &syn::DeriveInput) -> &punctuated::Punctuated<syn::Variant, token::Comma> {
