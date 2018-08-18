@@ -14,11 +14,11 @@ extern crate clap_derive;
 
 use clap::{App, Arg};
 
-#[derive(ArgEnum, Debug, PartialEq)]
+#[derive(ArgEnum, Debug, PartialEq, Copy, Clone)]
 enum ArgChoice {
     Foo,
     Bar,
-    Baz
+    Baz,
 }
 
 #[test]
@@ -28,9 +28,8 @@ fn when_lowercase() {
             Arg::with_name("arg")
                 .required(true)
                 .takes_value(true)
-                .possible_values(&ArgChoice::variants()),
-        )
-        .get_matches_from_safe(vec!["", "foo"])
+                .possible_values(ArgChoice::variants()),
+        ).get_matches_from_safe(vec!["", "foo"])
         .unwrap();
     let t = value_t!(matches.value_of("arg"), ArgChoice);
     assert!(t.is_ok());
@@ -54,9 +53,8 @@ fn when_capitalized() {
             Arg::with_name("arg")
                 .required(true)
                 .takes_value(true)
-                .possible_values(&ArgChoice::variants()),
-        )
-        .get_matches_from_safe(vec!["", "Foo"])
+                .possible_values(ArgChoice::variants()),
+        ).get_matches_from_safe(vec!["", "Foo"])
         .unwrap();
     let t = value_t!(matches.value_of("arg"), ArgChoice);
     assert!(t.is_ok());

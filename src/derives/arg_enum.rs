@@ -61,26 +61,30 @@ fn impl_from_str(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 }
             }
         }
+
+        impl ::std::convert::Into<&'static str> for #ident {
+            fn into(self) -> &'static str {
+                match self {
+                    #(val => stringify!(#variants),)*
+                }
+            }
+        }
     }
 }
 
+// See if we can return an array instead of a vec
 fn impl_variants(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let ident = &ast.ident;
     let local_variants = variants(ast);
 
-    let tokens = quote! {
+    quote! {
         impl #ident {
-            fn variants() -> impl ::std::iter::Iterator<Item = #ident> {
-                use ::std::str::FromStr;
-
-                #local_variants
-                    .iter()
-                    .map(|variant| #ident::from_str(&variant.ident.to_string()).unwrap())
+            fn variants() -> ::std::vec::Vec<#ident> {
+                use #ident::*;
+                vec![#local_variants]
             }
         }
-    };
-    println!("{}", tokens);
-    tokens
+    }
 }
 
 fn variants(ast: &syn::DeriveInput) -> &punctuated::Punctuated<syn::Variant, token::Comma> {
