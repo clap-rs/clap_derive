@@ -1,53 +1,47 @@
-// Copyright 2018 Guillaume Pinot (@TeXitoi) <texitoi@texitoi.eu>,
-// Kevin Knapp (@kbknapp) <kbknapp@gmail.com>, and
-// Andrew Hobden (@hoverbear) <andrew@hoverbear.org>
+// Copyright 2018 Guillaume Pinot (@TeXitoi) <texitoi@texitoi.eu>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
 // <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
-//
-// This work was derived from Structopt (https://github.com/TeXitoi/structopt)
-// commit#ea76fa1b1b273e65e3b0b1046643715b49bec51f which is licensed under the
-// MIT/Apache 2.0 license.
 
 #[macro_use]
-extern crate clap;
+extern crate structopt;
 
-use clap::Clap;
+use structopt::StructOpt;
 
-#[derive(Clap, PartialEq, Debug)]
+#[derive(StructOpt, PartialEq, Debug)]
 struct Opt {
-    #[clap(short = "f", long = "force")]
+    #[structopt(short = "f", long = "force")]
     force: bool,
-    #[clap(short = "v", long = "verbose", parse(from_occurrences))]
+    #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
     verbose: u64,
-    #[clap(subcommand)]
+    #[structopt(subcommand)]
     cmd: Sub,
 }
 
-#[derive(Clap, PartialEq, Debug)]
+#[derive(StructOpt, PartialEq, Debug)]
 enum Sub {
-    #[clap(name = "fetch")]
+    #[structopt(name = "fetch")]
     Fetch {},
-    #[clap(name = "add")]
+    #[structopt(name = "add")]
     Add {},
 }
 
-#[derive(Clap, PartialEq, Debug)]
+#[derive(StructOpt, PartialEq, Debug)]
 struct Opt2 {
-    #[clap(short = "f", long = "force")]
+    #[structopt(short = "f", long = "force")]
     force: bool,
-    #[clap(short = "v", long = "verbose", parse(from_occurrences))]
+    #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
     verbose: u64,
-    #[clap(subcommand)]
+    #[structopt(subcommand)]
     cmd: Option<Sub>,
 }
 
 #[test]
 fn test_no_cmd() {
-    let result = Opt::try_parse_from(&["test"]);
+    let result = Opt::clap().get_matches_from_safe(&["test"]);
     assert!(result.is_err());
 
     assert_eq!(
@@ -56,7 +50,7 @@ fn test_no_cmd() {
             verbose: 0,
             cmd: None
         },
-        Opt2::parse_from(&["test"])
+        Opt2::from_clap(&Opt2::clap().get_matches_from(&["test"]))
     );
 }
 
@@ -68,7 +62,7 @@ fn test_fetch() {
             verbose: 3,
             cmd: Sub::Fetch {}
         },
-        Opt::parse_from(&["test", "-vvv", "fetch"])
+        Opt::from_clap(&Opt::clap().get_matches_from(&["test", "-vvv", "fetch"]))
     );
     assert_eq!(
         Opt {
@@ -76,7 +70,7 @@ fn test_fetch() {
             verbose: 0,
             cmd: Sub::Fetch {}
         },
-        Opt::parse_from(&["test", "--force", "fetch"])
+        Opt::from_clap(&Opt::clap().get_matches_from(&["test", "--force", "fetch"]))
     );
 }
 
@@ -88,7 +82,7 @@ fn test_add() {
             verbose: 0,
             cmd: Sub::Add {}
         },
-        Opt::parse_from(&["test", "add"])
+        Opt::from_clap(&Opt::clap().get_matches_from(&["test", "add"]))
     );
     assert_eq!(
         Opt {
@@ -96,47 +90,47 @@ fn test_add() {
             verbose: 2,
             cmd: Sub::Add {}
         },
-        Opt::parse_from(&["test", "-vv", "add"])
+        Opt::from_clap(&Opt::clap().get_matches_from(&["test", "-vv", "add"]))
     );
 }
 
 #[test]
 fn test_badinput() {
-    let result = Opt::try_parse_from(&["test", "badcmd"]);
+    let result = Opt::clap().get_matches_from_safe(&["test", "badcmd"]);
     assert!(result.is_err());
-    let result = Opt::try_parse_from(&["test", "add", "--verbose"]);
+    let result = Opt::clap().get_matches_from_safe(&["test", "add", "--verbose"]);
     assert!(result.is_err());
-    let result = Opt::try_parse_from(&["test", "--badopt", "add"]);
+    let result = Opt::clap().get_matches_from_safe(&["test", "--badopt", "add"]);
     assert!(result.is_err());
-    let result = Opt::try_parse_from(&["test", "add", "--badopt"]);
+    let result = Opt::clap().get_matches_from_safe(&["test", "add", "--badopt"]);
     assert!(result.is_err());
 }
 
-#[derive(Clap, PartialEq, Debug)]
+#[derive(StructOpt, PartialEq, Debug)]
 struct Opt3 {
-    #[clap(short = "a", long = "all")]
+    #[structopt(short = "a", long = "all")]
     all: bool,
-    #[clap(subcommand)]
+    #[structopt(subcommand)]
     cmd: Sub2,
 }
 
-#[derive(Clap, PartialEq, Debug)]
+#[derive(StructOpt, PartialEq, Debug)]
 enum Sub2 {
-    #[clap(name = "foo")]
+    #[structopt(name = "foo")]
     Foo {
         file: String,
-        #[clap(subcommand)]
+        #[structopt(subcommand)]
         cmd: Sub3,
     },
-    #[clap(name = "bar")]
+    #[structopt(name = "bar")]
     Bar {},
 }
 
-#[derive(Clap, PartialEq, Debug)]
+#[derive(StructOpt, PartialEq, Debug)]
 enum Sub3 {
-    #[clap(name = "baz")]
+    #[structopt(name = "baz")]
     Baz {},
-    #[clap(name = "quux")]
+    #[structopt(name = "quux")]
     Quux {},
 }
 
@@ -150,48 +144,48 @@ fn test_subsubcommand() {
                 cmd: Sub3::Quux {}
             }
         },
-        Opt3::parse_from(&["test", "--all", "foo", "lib.rs", "quux"])
+        Opt3::from_clap(
+            &Opt3::clap().get_matches_from(&["test", "--all", "foo", "lib.rs", "quux"])
+        )
     );
 }
 
-#[derive(Clap, PartialEq, Debug)]
+#[derive(StructOpt, PartialEq, Debug)]
 enum SubSubCmdWithOption {
-    #[clap(name = "remote")]
+    #[structopt(name = "remote")]
     Remote {
-        #[clap(subcommand)]
+        #[structopt(subcommand)]
         cmd: Option<Remote>,
     },
-    #[clap(name = "stash")]
+    #[structopt(name = "stash")]
     Stash {
-        #[clap(subcommand)]
+        #[structopt(subcommand)]
         cmd: Stash,
     },
 }
-#[derive(Clap, PartialEq, Debug)]
+#[derive(StructOpt, PartialEq, Debug)]
 enum Remote {
-    #[clap(name = "add")]
+    #[structopt(name = "add")]
     Add { name: String, url: String },
-    #[clap(name = "remove")]
+    #[structopt(name = "remove")]
     Remove { name: String },
 }
 
-#[derive(Clap, PartialEq, Debug)]
+#[derive(StructOpt, PartialEq, Debug)]
 enum Stash {
-    #[clap(name = "save")]
+    #[structopt(name = "save")]
     Save,
-    #[clap(name = "pop")]
+    #[structopt(name = "pop")]
     Pop,
 }
 
 #[test]
 fn sub_sub_cmd_with_option() {
     fn make(args: &[&str]) -> Option<SubSubCmdWithOption> {
-        use clap::{FromArgMatches, IntoApp};
-
-        SubSubCmdWithOption::into_app()
-            .try_get_matches_from(args)
+        SubSubCmdWithOption::clap()
+            .get_matches_from_safe(args)
             .ok()
-            .map(|m| SubSubCmdWithOption::from_argmatches(&m))
+            .map(|m| SubSubCmdWithOption::from_clap(&m))
     }
     assert_eq!(
         Some(SubSubCmdWithOption::Remote { cmd: None }),
