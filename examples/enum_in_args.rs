@@ -1,7 +1,9 @@
 #[macro_use]
+extern crate structopt;
+#[macro_use]
 extern crate clap;
 
-use clap::Clap;
+use structopt::StructOpt;
 
 arg_enum! {
     #[derive(Debug)]
@@ -12,14 +14,19 @@ arg_enum! {
     }
 }
 
-#[derive(Clap, Debug)]
+#[derive(StructOpt, Debug)]
 struct Opt {
     /// Important argument.
-    #[clap(raw(possible_values = "&Baz::variants()", case_insensitive = "true"))]
+    #[structopt(
+        raw(
+            possible_values = "&Baz::variants()",
+            case_insensitive = "true"
+        )
+    )]
     i: Baz,
 }
 
 fn main() {
-    let opt = Opt::parse();
+    let opt = Opt::from_args();
     println!("{:?}", opt);
 }
