@@ -1,38 +1,32 @@
 [package]
-name = "clap_derive"
-version = "0.3.0"
-authors = [
-    "Guillaume Pinot <texitoi@texitoi.eu>",
-    "Kevin K. <kbknapp@gmail.com>",
-    "hoverbear <andrew@hoverbear.org>"
-]
-description = "Parse command line argument by defining a struct, derive crate."
-documentation = "https://docs.rs/clap_derive"
-repository = "https://github.com/clap-rs/clap_derive"
-keywords = ["clap", "cli", "derive", "proc_macro", "parse"]
-categories = ["command-line-interface", "development-tools::procedural-macro-helpers"]
+name = "structopt"
+version = "0.2.11"
+authors = ["Guillaume Pinot <texitoi@texitoi.eu>", "others"]
+description = "Parse command line argument by defining a struct."
+documentation = "https://docs.rs/structopt"
+repository = "https://github.com/TeXitoi/structopt"
+keywords = ["clap", "cli", "derive", "docopt"]
+categories = ["command-line-interface"]
 license = "Apache-2.0/MIT"
 readme = "README.md"
 
-[lib]
-proc-macro = true
+[features]
+default = ["clap/default"]
+nightly = ["structopt-derive/nightly"]
+suggestions = ["clap/suggestions"]
+color = ["clap/color"]
+wrap_help = ["clap/wrap_help"]
+yaml = ["clap/yaml"]
+lints = ["clap/lints"]
+debug = ["clap/debug"]
+no_cargo = ["clap/no_cargo"]
+doc = ["clap/doc"]
 
 [badges]
-travis-ci = { repository = "clap-rs/clap_derive" }
-appveyor = { repository = "https://github.com/clap-rs/clap_derive", service = "github" }
+travis-ci = { repository = "TeXitoi/structopt" }
 
 [dependencies]
-syn = "0.15.39"
-quote = "0.6"
-proc-macro2 = "0.4"
-clippy = {version = "0.0.174", optional = true }
+clap = { version = "2.20", default-features = false }
+structopt-derive = { path = "structopt-derive", version = "0.2.11" }
 
-[dev-dependencies]
-clap = { git = "https://github.com/clap-rs/clap", branch = "master"} # ONLY FOR INITIAL DEVELOPMENT...change to real crates.io ver for rlease!
-
-[features]
-default = []
-nightly = []
-lints = ["clippy"]
-debug = []
-doc = []
+[workspace]
