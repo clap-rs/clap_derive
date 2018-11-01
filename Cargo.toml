@@ -25,6 +25,7 @@ appveyor = { repository = "https://github.com/clap-rs/clap_derive", service = "g
 syn = "0.15.39"
 quote = "0.6"
 proc-macro2 = "0.4"
+heck = "^0.3.0"
 clippy = {version = "0.0.174", optional = true }
 
 [dev-dependencies]

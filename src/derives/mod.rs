@@ -20,7 +20,7 @@ mod from_argmatches;
 mod into_app;
 
 pub use self::arg_enum::derive_arg_enum;
-pub use self::attrs::{Attrs, Kind, Parser, Ty};
+pub use self::attrs::{Attrs, Kind, Parser, Ty, CasingStyle, GenOutput, DEFAULT_CASING};
 pub use self::clap::derive_clap;
 pub use self::from_argmatches::derive_from_argmatches;
 pub use self::into_app::derive_into_app;

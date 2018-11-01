@@ -21,6 +21,7 @@ extern crate proc_macro;
 extern crate syn;
 #[macro_use]
 extern crate quote;
+extern crate heck;
 extern crate proc_macro2;
 
 mod derives;

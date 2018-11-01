@@ -12,9 +12,13 @@
 // commit#ea76fa1b1b273e65e3b0b1046643715b49bec51f which is licensed under the
 // MIT/Apache 2.0 license.
 
+use heck::{CamelCase, KebabCase, MixedCase, ShoutySnakeCase, SnakeCase};
 use proc_macro2;
 use std::{env, mem};
 use syn;
+
+/// Default casing style for generated arguments.
+pub const DEFAULT_CASING: CasingStyle = CasingStyle::Verbatim;
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Kind {
@@ -32,6 +36,8 @@ pub enum Ty {
 #[derive(Debug)]
 pub struct Attrs {
     name: String,
+    cased_name: String,
+    casing: CasingStyle,
     methods: Vec<Method>,
     parser: (Parser, proc_macro2::TokenStream),
     has_custom_parser: bool,
@@ -50,6 +56,34 @@ pub enum Parser {
     TryFromOsStr,
     FromOccurrences,
 }
+
+/// Defines the casing for the attributes long representation.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum CasingStyle {
+    /// Indicate word boundaries with uppercase letter, excluding the first word.
+    Camel,
+    /// Keep all letters lowercase and indicate word boundaries with hyphens.
+    Kebab,
+    /// Indicate word boundaries with uppercase letter, including the first word.
+    Pascal,
+    /// Keep all letters uppercase and indicate word boundaries with underscores.
+    ScreamingSnake,
+    /// Keep all letters lowercase and indicate word boundaries with underscores.
+    Snake,
+    /// Use the original attribute name defined in the code.
+    Verbatim,
+}
+
+/// Output for the gen_xxx() methods were we need more than a simple stream of tokens.
+///
+/// The output of a generation method is not only the stream of new tokens but also the attribute
+/// information of the current element. These attribute information may contain valuable information
+/// for any kind of child arguments.
+pub struct GenOutput {
+    pub tokens: proc_macro2::TokenStream,
+    pub attrs: Attrs,
+}
+
 impl ::std::str::FromStr for Parser {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -64,10 +98,47 @@ impl ::std::str::FromStr for Parser {
     }
 }
 
+impl CasingStyle {
+    fn translate(&self, input: &str) -> String {
+        match *self {
+            CasingStyle::Pascal => input.to_camel_case(),
+            CasingStyle::Kebab => input.to_kebab_case(),
+            CasingStyle::Camel => input.to_mixed_case(),
+            CasingStyle::ScreamingSnake => input.to_shouty_snake_case(),
+            CasingStyle::Snake => input.to_snake_case(),
+            CasingStyle::Verbatim => String::from(input),
+        }
+    }
+}
+
+impl ::std::str::FromStr for CasingStyle {
+    type Err = String;
+
+    fn from_str(name: &str) -> Result<Self, Self::Err> {
+        let name = name.to_camel_case().to_lowercase();
+
+        let case = match name.as_ref() {
+            "camel" | "camelcase" => CasingStyle::Camel,
+            "kebab" | "kebabcase" => CasingStyle::Kebab,
+            "pascal" | "pascalcase" => CasingStyle::Pascal,
+            "screamingsnake" | "screamingsnakecase" => CasingStyle::ScreamingSnake,
+            "snake" | "snakecase" => CasingStyle::Snake,
+            "verbatim" | "verbatimcase" => CasingStyle::Verbatim,
+            _ => return Err(format!("unsupported casing: {}", name)),
+        };
+
+        Ok(case)
+    }
+}
+
 impl Attrs {
-    fn new(name: String) -> Attrs {
+    fn new(name: String, casing: CasingStyle) -> Attrs {
+        let cased_name = casing.translate(&name);
+
         Attrs {
             name: name,
+            cased_name,
+            casing,
             methods: vec![],
             parser: (Parser::TryFromStr, quote!(::std::str::FromStr::from_str)),
             has_custom_parser: false,
@@ -80,7 +151,10 @@ impl Attrs {
                 let methods = mem::replace(&mut self.methods, vec![]);
                 self.methods = methods.into_iter().filter(|m| m.name != name).collect();
             }
-            ("name", new_name) => self.name = new_name.into(),
+            ("name", new_name) => {
+                self.name = new_name.into();
+                self.cased_name = self.casing.translate(new_name);
+            }
             (name, arg) => self.methods.push(Method {
                 name: name.to_string(),
                 args: quote!(#arg),
@@ -92,16 +166,16 @@ impl Attrs {
         use syn::Meta::*;
         use syn::NestedMeta::*;
 
-        let iter = attrs
+        let clap_attrs = attrs
             .iter()
             .filter_map(|attr| {
                 let path = &attr.path;
-                match quote!(#path).to_string() == "clap" {
-                    true => Some(
+                match quote!(#path).to_string().as_ref() {
+                    "clap" => Some(
                         attr.interpret_meta()
                             .expect(&format!("invalid clap_derive syntax: {}", quote!(attr))),
                     ),
-                    false => None,
+                    _ => None,
                 }
             })
             .flat_map(|m| match m {
@@ -112,8 +186,22 @@ impl Attrs {
                 Meta(m) => m,
                 ref tokens => panic!("unsupported syntax: {}", quote!(#tokens).to_string()),
             });
-        for attr in iter {
+
+        for attr in clap_attrs {
             match attr {
+                NameValue(syn::MetaNameValue {
+                    ref ident,
+                    lit: Str(ref value),
+                    ..
+                }) if ident == "rename_all" =>
+                {
+                    self.casing = {
+                        let input = value.value();
+                        ::std::str::FromStr::from_str(&input)
+                            .unwrap_or_else(|error| panic!("{}", error))
+                    };
+                    self.cased_name = self.casing.translate(&self.name);
+                }
                 NameValue(syn::MetaNameValue {
                     ident,
                     lit: Str(value),
@@ -183,6 +271,14 @@ impl Attrs {
                 Word(ref w) if w == "flatten" => {
                     self.set_kind(Kind::FlattenStruct);
                 }
+                Word(ref w) if w == "long" => {
+                    let cased_name = &self.cased_name.clone();
+                    self.push_str_method("long", cased_name);
+                }
+                Word(ref w) if w == "short" => {
+                    let cased_name = &self.cased_name.clone();
+                    self.push_str_method("short", cased_name);
+                }
                 ref i @ List(..) | ref i @ Word(..) => panic!("unsupported option: {}", quote!(#i)),
             }
         }
@@ -250,8 +346,8 @@ impl Attrs {
             args: quote!(#arg),
         });
     }
-    pub fn from_struct(attrs: &[syn::Attribute], name: String) -> Attrs {
-        let mut res = Self::new(name);
+    pub fn from_struct(attrs: &[syn::Attribute], name: String, argument_casing: CasingStyle) -> Attrs {
+        let mut res = Self::new(name, argument_casing);
         let attrs_with_env = [
             ("version", "CARGO_PKG_VERSION"),
             ("author", "CARGO_PKG_AUTHORS"),
@@ -295,9 +391,9 @@ impl Attrs {
             Ty::Other
         }
     }
-    pub fn from_field(field: &syn::Field) -> Attrs {
+    pub fn from_field(field: &syn::Field, struct_casing: CasingStyle) -> Attrs {
         let name = field.ident.as_ref().unwrap().to_string();
-        let mut res = Self::new(name);
+        let mut res = Self::new(name, struct_casing);
         res.push_doc_comment(&field.attrs, "help");
         res.push_attrs(&field.attrs);
 
@@ -373,7 +469,8 @@ impl Attrs {
         });
         quote!( #(#methods)* )
     }
-    pub fn name(&self) -> &str { &self.name }
+    pub fn cased_name(&self) -> &str { &self.cased_name }
     pub fn parser(&self) -> &(Parser, proc_macro2::TokenStream) { &self.parser }
     pub fn kind(&self) -> Kind { self.kind }
+    pub fn casing(&self) -> CasingStyle { self.casing }
 }

@@ -26,11 +26,12 @@ use derives::into_app;
 fn gen_app_augmentation(
     fields: &punctuated::Punctuated<syn::Field, token::Comma>,
     app_var: &syn::Ident,
+    parent_attribute: &Attrs,
 ) -> proc_macro2::TokenStream {
     let subcmds: Vec<_> = fields
         .iter()
         .filter_map(|field| {
-            let attrs = Attrs::from_field(&field);
+            let attrs = Attrs::from_field(&field, parent_attribute.casing());
             if let Kind::Subcommand(ty) = attrs.kind() {
                 let subcmd_type = match (ty, derives::sub_type(&field.ty)) {
                     (Ty::Option, Some(sub_type)) => sub_type,
@@ -62,7 +63,7 @@ fn gen_app_augmentation(
     );
 
     let args = fields.iter().filter_map(|field| {
-        let attrs = Attrs::from_field(field);
+        let attrs = Attrs::from_field(field, parent_attribute.casing());
         match attrs.kind() {
             Kind::Subcommand(_) => None,
             Kind::FlattenStruct => {
@@ -110,7 +111,7 @@ fn gen_app_augmentation(
                     }
                 };
                 let methods = attrs.methods();
-                let name = attrs.name();
+                let name = attrs.cased_name();
                 Some(quote! {
                     let #app_var = #app_var.arg(
                         ::clap::Arg::with_name(#name)
@@ -131,9 +132,10 @@ fn gen_app_augmentation(
 
 fn gen_augment_app_fn(
     fields: &punctuated::Punctuated<syn::Field, token::Comma>,
+    parent_attribute: &Attrs,
 ) -> proc_macro2::TokenStream {
     let app_var = syn::Ident::new("app", proc_macro2::Span::call_site());
-    let augmentation = gen_app_augmentation(fields, &app_var);
+    let augmentation = gen_app_augmentation(fields, &app_var, parent_attribute);
     quote! {
         pub fn augment_app<'b>(
             #app_var: ::clap::App<'b>
@@ -145,15 +147,16 @@ fn gen_augment_app_fn(
 
 fn gen_augment_app_for_enum(
     variants: &punctuated::Punctuated<syn::Variant, token::Comma>,
+    parent_attribute: &Attrs,
 ) -> proc_macro2::TokenStream {
     use syn::Fields::*;
 
     let subcommands = variants.iter().map(|variant| {
         let name = variant.ident.to_string();
-        let attrs = Attrs::from_struct(&variant.attrs, name);
+        let attrs = Attrs::from_struct(&variant.attrs, name, parent_attribute.casing());
         let app_var = syn::Ident::new("subcommand", proc_macro2::Span::call_site());
         let arg_block = match variant.fields {
-            Named(ref fields) => gen_app_augmentation(&fields.named, &app_var),
+            Named(ref fields) => gen_app_augmentation(&fields.named, &app_var, &attrs),
             Unit => quote!( #app_var ),
             Unnamed(syn::FieldsUnnamed { ref unnamed, .. }) if unnamed.len() == 1 => {
                 let ty = &unnamed[0];
@@ -173,7 +176,7 @@ fn gen_augment_app_for_enum(
             Unnamed(..) => panic!("{}: tuple enum are not supported", variant.ident),
         };
 
-        let name = attrs.name();
+        let name = attrs.cased_name();
         let from_attrs = attrs.methods();
         quote! {
             .subcommand({
@@ -196,15 +199,16 @@ fn gen_augment_app_for_enum(
 fn gen_from_subcommand(
     name: &syn::Ident,
     variants: &punctuated::Punctuated<syn::Variant, token::Comma>,
+    parent_attribute: &Attrs,
 ) -> proc_macro2::TokenStream {
     use syn::Fields::*;
 
     let match_arms = variants.iter().map(|variant| {
-        let attrs = Attrs::from_struct(&variant.attrs, variant.ident.to_string());
-        let sub_name = attrs.name();
+        let attrs = Attrs::from_struct(&variant.attrs, variant.ident.to_string(), parent_attribute.casing());
+        let sub_name = attrs.cased_name();
         let variant_name = &variant.ident;
         let constructor_block = match variant.fields {
-            Named(ref fields) => from_argmatches::gen_constructor(&fields.named),
+            Named(ref fields) => from_argmatches::gen_constructor(&fields.named, &attrs),
             Unit => quote!(),
             Unnamed(ref fields) if fields.unnamed.len() == 1 => {
                 let ty = &fields.unnamed[0];
@@ -237,15 +241,16 @@ fn clap_impl_for_struct(
     attrs: &[syn::Attribute],
 ) -> proc_macro2::TokenStream {
     let into_app_impl = into_app::gen_into_app_impl_for_struct(name, attrs);
-    let augment_app_fn = gen_augment_app_fn(fields);
-    let from_argmatches_impl = from_argmatches::gen_from_argmatches_impl_for_struct(name, fields);
+    let into_app_impl_tokens = into_app_impl.tokens;
+    let augment_app_fn = gen_augment_app_fn(fields, &into_app_impl.attrs);
+    let from_argmatches_impl = from_argmatches::gen_from_argmatches_impl_for_struct(name, fields, &into_app_impl.attrs);
     let parse_fns = gen_parse_fns(name);
 
     quote! {
         #[allow(unused_variables)]
         impl ::clap::Clap for #name { }
 
-        #into_app_impl
+        #into_app_impl_tokens
 
         #from_argmatches_impl
 
@@ -267,16 +272,17 @@ fn clap_impl_for_enum(
     attrs: &[syn::Attribute],
 ) -> proc_macro2::TokenStream {
     let into_app_impl = into_app::gen_into_app_impl_for_enum(name, attrs);
-    let augment_app_fn = gen_augment_app_for_enum(variants);
+    let into_app_impl_tokens = into_app_impl.tokens;
+    let augment_app_fn = gen_augment_app_for_enum(variants, &into_app_impl.attrs);
     let from_argmatches_impl = from_argmatches::gen_from_argmatches_impl_for_enum(name);
-    let from_subcommand = gen_from_subcommand(name, variants);
+    let from_subcommand = gen_from_subcommand(name, variants, &into_app_impl.attrs);
     let parse_fns = gen_parse_fns(name);
 
     quote! {
         #[allow(unused_variables)]
         impl ::clap::Clap for #name { }
 
-        #into_app_impl
+        #into_app_impl_tokens
 
         #from_argmatches_impl
 

@@ -33,20 +33,22 @@ struct Opt {
     #[clap(short = "v", long = "verbose", parse(from_occurrences))]
     verbose: u8,
 
+    // The standalone parameters `short`and `long` automatically name the
+    // arguments based on the field name (defaults to kebab-case).
     /// Set speed
-    #[clap(short = "s", long = "speed", default_value = "42")]
+    #[clap(short, long, default_value = "42")]
     speed: f64,
 
     /// Output file
-    #[clap(short = "o", long = "output", parse(from_os_str))]
+    #[clap(short, long, parse(from_os_str))]
     output: PathBuf,
 
     /// Number of cars
-    #[clap(short = "c", long = "nb-cars")]
+    #[clap(short = "c", long)]
     nb_cars: Option<i32>,
 
     /// admin_level to consider
-    #[clap(short = "l", long = "level")]
+    #[clap(short, long)]
     level: Vec<String>,
 
     /// Files to process

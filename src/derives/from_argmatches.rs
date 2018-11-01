@@ -11,13 +11,14 @@
 // This work was derived from Structopt (https://github.com/TeXitoi/structopt)
 // commit#ea76fa1b1b273e65e3b0b1046643715b49bec51f which is licensed under the
 // MIT/Apache 2.0 license.
+use std::env;
 
 use proc_macro2;
 use syn;
 use syn::punctuated;
 use syn::token;
 
-use derives::{self, Attrs, Kind, Parser, Ty};
+use derives::{self, Attrs, Kind, Parser, Ty, DEFAULT_CASING};
 
 pub fn derive_from_argmatches(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     use syn::Data::*;
@@ -27,7 +28,14 @@ pub fn derive_from_argmatches(input: &syn::DeriveInput) -> proc_macro2::TokenStr
         Struct(syn::DataStruct {
             fields: syn::Fields::Named(ref fields),
             ..
-        }) => gen_from_argmatches_impl_for_struct(struct_name, &fields.named),
+        }) => {
+            let name = env::var("CARGO_PKG_NAME")
+                .ok()
+                .unwrap_or_else(String::default);
+
+            let attrs = Attrs::from_struct(&input.attrs, name, DEFAULT_CASING);
+            gen_from_argmatches_impl_for_struct(struct_name, &fields.named, &attrs)
+        },
         // Enum(ref e) => clap_for_enum_impl(struct_name, &e.variants, &input.attrs),
         _ => panic!("clap_derive only supports non-tuple structs"), // and enums"),
     };
@@ -38,8 +46,9 @@ pub fn derive_from_argmatches(input: &syn::DeriveInput) -> proc_macro2::TokenStr
 pub fn gen_from_argmatches_impl_for_struct(
     name: &syn::Ident,
     fields: &punctuated::Punctuated<syn::Field, token::Comma>,
+    parent_attribute: &Attrs,
 ) -> proc_macro2::TokenStream {
-    let from_argmatches_fn = gen_from_argmatches_fn_for_struct(name, fields);
+    let from_argmatches_fn = gen_from_argmatches_fn_for_struct(name, fields, parent_attribute);
 
     quote! {
         impl ::clap::FromArgMatches for #name {
@@ -60,8 +69,9 @@ pub fn gen_from_argmatches_impl_for_struct(
 pub fn gen_from_argmatches_fn_for_struct(
     struct_name: &syn::Ident,
     fields: &punctuated::Punctuated<syn::Field, token::Comma>,
+    parent_attribute: &Attrs,
 ) -> proc_macro2::TokenStream {
-    let field_block = gen_constructor(fields);
+    let field_block = gen_constructor(fields, parent_attribute);
 
     quote! {
         fn from_argmatches(matches: &::clap::ArgMatches) -> Self {
@@ -72,9 +82,10 @@ pub fn gen_from_argmatches_fn_for_struct(
 
 pub fn gen_constructor(
     fields: &punctuated::Punctuated<syn::Field, token::Comma>,
+    parent_attribute: &Attrs,
 ) -> proc_macro2::TokenStream {
     let fields = fields.iter().map(|field| {
-        let attrs = Attrs::from_field(field);
+        let attrs = Attrs::from_field(field, parent_attribute.casing());
         let field_name = field.ident.as_ref().unwrap();
         match attrs.kind() {
             Kind::Subcommand(ty) => {
@@ -110,7 +121,7 @@ pub fn gen_constructor(
                 };
 
                 let occurences = attrs.parser().0 == Parser::FromOccurrences;
-                let name = attrs.name();
+                let name = attrs.cased_name();
                 let field_value = match ty {
                     Ty::Bool => quote!(matches.is_present(#name)),
                     Ty::Option => quote! {
