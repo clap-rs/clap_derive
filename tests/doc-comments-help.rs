@@ -8,7 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 //
-// This work was derived from Structopt (https://github.com/TeXitoi/structopt)
+// This work was derived from Structopt (https://github.com/TeXitoi/clap)
 // commit#ea76fa1b1b273e65e3b0b1046643715b49bec51f which is licensed under the
 // MIT/Apache 2.0 license.
 
@@ -79,4 +79,82 @@ fn empty_line_in_doc_comment_is_double_linefeed() {
 
     println!("{}", output);
     assert!(output.starts_with("lorem-ipsum \nFoo.\n\nBar\n\nUSAGE:"));
+}
+
+#[test]
+fn splits_flag_doc_comment_between_short_and_long() {
+    use clap::IntoApp;
+    /// Lorem ipsumclap
+    #[derive(Clap, PartialEq, Debug)]
+    #[clap(name = "lorem-ipsum", about = "Dolor sit amet")]
+    struct LoremIpsum {
+        /// DO NOT PASS A BAR UNDER ANY CIRCUMSTANCES
+        ///
+        /// Or something else
+        #[clap(long = "foo")]
+        foo: bool,
+    }
+
+    let mut app = LoremIpsum::into_app();
+
+    let short_help = {
+        let mut buffer = Vec::new();
+        app.write_help(&mut buffer).ok();
+
+        String::from_utf8(buffer).unwrap()
+    };
+
+    let long_help = {
+        let mut buffer = Vec::new();
+        app.write_long_help(&mut buffer).ok();
+
+        String::from_utf8(buffer).unwrap()
+    };
+
+    assert!(!short_help.contains("Or something else"));
+    assert!(long_help.contains("DO NOT PASS A BAR UNDER ANY CIRCUMSTANCES"));
+    assert!(long_help.contains("Or something else"));
+}
+
+#[test]
+fn splits_subcommand_doc_comment_between_short_and_long() {
+    use clap::IntoApp;
+    /// Lorem ipsumclap
+    #[derive(Clap, Debug)]
+    #[clap(name = "lorem-ipsum", about = "Dolor sit amet")]
+    struct LoremIpsum {
+        #[clap(subcommand)]
+        foo: SubCommand,
+    }
+
+    #[derive(Clap, Debug)]
+    pub enum SubCommand {
+        /// DO NOT PASS A BAR UNDER ANY CIRCUMSTANCES
+        ///
+        /// Or something else
+        #[clap(name = "foo")]
+        Foo {
+            #[clap(help = "foo")]
+            bars: Vec<String>,
+        },
+    }
+
+    let mut app = LoremIpsum::into_app();
+
+    let short_help = {
+        let mut buffer = Vec::new();
+        app.write_help(&mut buffer).ok();
+
+        String::from_utf8(buffer).unwrap()
+    };
+
+    let long_help = {
+        app.try_get_matches_from(vec!["test", "foo", "--help"])
+            .expect_err("")
+            .message
+    };
+
+    assert!(!short_help.contains("Or something else"));
+    assert!(long_help.contains("DO NOT PASS A BAR UNDER ANY CIRCUMSTANCES"));
+    assert!(long_help.contains("Or something else"));
 }
