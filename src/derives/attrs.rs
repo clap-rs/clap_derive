@@ -173,7 +173,7 @@ impl Attrs {
                 match quote!(#path).to_string().as_ref() {
                     "clap" => Some(
                         attr.interpret_meta()
-                            .expect(&format!("invalid clap_derive syntax: {}", quote!(attr))),
+                            .expect(&format!("invalid clap_derive syntax: {}", quote!(#attr))),
                     ),
                     _ => None,
                 }
