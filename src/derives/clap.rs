@@ -83,7 +83,7 @@ fn gen_app_augmentation(
                     _ => &field.ty,
                 };
 
-                let occurences = attrs.parser().0 == Parser::FromOccurrences;
+                let occurrences = attrs.parser().0 == Parser::FromOccurrences;
 
                 let validator = match *attrs.parser() {
                     (Parser::TryFromStr, ref f) => quote! {
@@ -104,7 +104,7 @@ fn gen_app_augmentation(
                     Ty::Bool => quote!(),
                     Ty::Option => quote!( .takes_value(true) #validator ),
                     Ty::Vec => quote!( .takes_value(true).multiple(true) #validator ),
-                    Ty::Other if occurences => quote!( .multiple_occurrences(true) ),
+                    Ty::Other if occurrences => quote!( .multiple_occurrences(true) ),
                     Ty::Other => {
                         let required = !attrs.has_method("default_value");
                         quote!( .takes_value(true).required(#required) #validator )

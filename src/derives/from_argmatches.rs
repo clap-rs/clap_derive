@@ -120,7 +120,7 @@ pub fn gen_constructor(
                     (FromOccurrences, ref f) => (quote!(occurrences_of), quote!(), f.clone()),
                 };
 
-                let occurences = attrs.parser().0 == Parser::FromOccurrences;
+                let occurrences = attrs.parser().0 == Parser::FromOccurrences;
                 let name = attrs.cased_name();
                 let field_value = match ty {
                     Ty::Bool => quote!(matches.is_present(#name)),
@@ -134,7 +134,7 @@ pub fn gen_constructor(
                             .map(|v| v.map(#parse).collect())
                             .unwrap_or_else(Vec::new)
                     },
-                    Ty::Other if occurences => quote! {
+                    Ty::Other if occurrences => quote! {
                         #parse(matches.#value_of(#name))
                     },
                     Ty::Other => quote! {
