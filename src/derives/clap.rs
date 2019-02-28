@@ -46,7 +46,7 @@ fn gen_app_augmentation(
                     }
                 };
 
-                Some(quote!{
+                Some(quote! {
                     let #app_var = <#subcmd_type>::augment_app( #app_var );
                     #required
                 })
@@ -111,7 +111,7 @@ fn gen_app_augmentation(
                 };
                 let methods = attrs.methods();
                 let name = attrs.name();
-                Some(quote!{
+                Some(quote! {
                     let #app_var = #app_var.arg(
                         ::clap::Arg::with_name(#name)
                             #modifier
@@ -319,7 +319,7 @@ fn gen_parse_fns(name: &syn::Ident) -> proc_macro2::TokenStream {
 
         fn try_parse() -> ::std::result::Result<#name, ::clap::Error> {
             use ::clap::{FromArgMatches, IntoApp};
-            Ok(#name::from_argmatches(&#name::into_app().get_matches_safe()?))
+            Ok(#name::from_argmatches(&#name::into_app().get_matches_from()?))
         }
 
         fn parse_from<I, T>(itr: I) -> #name
@@ -335,7 +335,7 @@ fn gen_parse_fns(name: &syn::Ident) -> proc_macro2::TokenStream {
             I: ::std::iter::IntoIterator<Item = T>,
             T: Into<::std::ffi::OsString> + Clone {
             use ::clap::{FromArgMatches, IntoApp};
-            Ok(#name::from_argmatches(&#name::into_app().get_matches_from_safe(itr)?))
+            Ok(#name::from_argmatches(&#name::into_app().get_matches_from(itr)?))
         }
     }
 }
