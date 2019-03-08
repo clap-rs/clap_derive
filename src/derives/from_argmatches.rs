@@ -126,7 +126,6 @@ pub fn gen_constructor(
                     Ty::Bool => quote!(matches.is_present(#name)),
                     Ty::Option => quote! {
                         matches.#value_of(#name)
-                            .as_ref()
                             .map(#parse)
                     },
                     Ty::Vec => quote! {

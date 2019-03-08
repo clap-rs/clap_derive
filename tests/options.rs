@@ -95,3 +95,24 @@ fn default_value() {
         Opt::parse_from(&["test", "-afoo"])
     );
 }
+
+#[test]
+fn option_from_str() {
+    #[derive(Debug, PartialEq)]
+    struct A;
+
+    impl<'a> From<&'a str> for A {
+        fn from(_: &str) -> A {
+            A
+        }
+    }
+
+    #[derive(Debug, Clap, PartialEq)]
+    struct Opt {
+        #[clap(parse(from_str))]
+        a: Option<A>,
+    }
+
+    assert_eq!(Opt { a: None }, Opt::parse_from(&["test"]));
+    assert_eq!(Opt { a: Some(A) }, Opt::parse_from(&["test", "foo"]));
+}

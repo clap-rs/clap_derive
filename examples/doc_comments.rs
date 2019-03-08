@@ -9,7 +9,6 @@
 #[macro_use]
 extern crate clap;
 
-use std::path::PathBuf;
 use clap::Clap;
 
 /// A basic example for the usage of doc comments as replacement
