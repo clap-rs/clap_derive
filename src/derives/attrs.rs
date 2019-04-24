@@ -136,11 +136,11 @@ impl ::std::str::FromStr for CasingStyle {
 }
 
 impl Attrs {
-    fn new(name: String, casing: CasingStyle) -> Attrs {
+    fn new(name: String, casing: CasingStyle) -> Self {
         let cased_name = casing.translate(&name);
 
-        Attrs {
-            name: name,
+        Self {
+            name,
             cased_name,
             casing,
             methods: vec![],
@@ -238,9 +238,8 @@ impl Attrs {
                             use self::Parser::*;
                             let parser = i.to_string().parse().unwrap();
                             let function = match parser {
-                                FromStr => quote!(::std::convert::From::from),
+                                FromStr | FromOsStr => quote!(::std::convert::From::from),
                                 TryFromStr => quote!(::std::str::FromStr::from_str),
-                                FromOsStr => quote!(::std::convert::From::from),
                                 TryFromOsStr => panic!(
                                     "cannot omit parser function name with `try_from_os_str`"
                                 ),
@@ -367,8 +366,7 @@ impl Attrs {
                 .first()
                 .map(String::as_ref)
                 .map(str::trim)
-                .map(|s| s.trim_end_matches('.'))
-                .unwrap_or("");
+                .map_or("", |s| s.trim_end_matches('.'));
 
             self.methods.push(Method {
                 name: name.to_string(),
@@ -381,7 +379,7 @@ impl Attrs {
             });
         }
     }
-    pub fn from_struct(attrs: &[syn::Attribute], name: String, argument_casing: CasingStyle) -> Attrs {
+    pub fn from_struct(attrs: &[syn::Attribute], name: String, argument_casing: CasingStyle) -> Self {
         let mut res = Self::new(name, argument_casing);
         let attrs_with_env = [
             ("version", "CARGO_PKG_VERSION"),
@@ -430,7 +428,7 @@ impl Attrs {
             Ty::Other
         }
     }
-    pub fn from_field(field: &syn::Field, struct_casing: CasingStyle) -> Attrs {
+    pub fn from_field(field: &syn::Field, struct_casing: CasingStyle) -> Self {
         let name = field.ident.as_ref().unwrap().to_string();
         let mut res = Self::new(name, struct_casing);
         res.push_doc_comment(&field.attrs, "help");
