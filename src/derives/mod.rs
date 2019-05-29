@@ -25,7 +25,7 @@ pub use self::clap::derive_clap;
 pub use self::from_argmatches::derive_from_argmatches;
 pub use self::into_app::derive_into_app;
 
-fn sub_type(t: &syn::Type) -> Option<&syn::Type> {
+pub fn sub_type(t: &syn::Type) -> Option<&syn::Type> {
     let segs = match *t {
         syn::Type::Path(syn::TypePath {
             path: syn::Path { ref segments, .. },

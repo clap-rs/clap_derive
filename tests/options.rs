@@ -116,3 +116,85 @@ fn option_from_str() {
     assert_eq!(Opt { a: None }, Opt::parse_from(&["test"]));
     assert_eq!(Opt { a: Some(A) }, Opt::parse_from(&["test", "foo"]));
 }
+
+#[test]
+fn optional_argument_for_optional_option() {
+    use clap::IntoApp;
+
+    #[derive(Clap, PartialEq, Debug)]
+    struct Opt {
+        #[clap(short = "a")]
+        arg: Option<Option<i32>>,
+    }
+    assert_eq!(
+        Opt {
+            arg: Some(Some(42))
+        },
+        Opt::parse_from(&["test", "-a42"])
+    );
+    assert_eq!(
+        Opt { arg: Some(None) },
+        Opt::parse_from(&["test", "-a"])
+    );
+    assert_eq!(
+        Opt { arg: None },
+        Opt::parse_from(&["test"])
+    );
+    assert!(Opt::into_app()
+        .try_get_matches_from(&["test", "-a42", "-a24"])
+        .is_err());
+}
+
+#[test]
+fn two_option_options() {
+    #[derive(Clap, PartialEq, Debug)]
+    struct Opt {
+        #[clap(short = "a")]
+        arg: Option<Option<i32>>,
+
+        #[clap(long = "field")]
+        field: Option<Option<String>>,
+    }
+    assert_eq!(
+        Opt {
+            arg: Some(Some(42)),
+            field: Some(Some("f".into()))
+        },
+        Opt::parse_from(&["test", "-a42", "--field", "f"])
+    );
+    assert_eq!(
+        Opt {
+            arg: Some(Some(42)),
+            field: Some(None)
+        },
+        Opt::parse_from(&["test", "-a42", "--field"])
+    );
+    assert_eq!(
+        Opt {
+            arg: Some(None),
+            field: Some(None)
+        },
+        Opt::parse_from(&["test", "-a", "--field"])
+    );
+    assert_eq!(
+        Opt {
+            arg: Some(None),
+            field: Some(Some("f".into()))
+        },
+        Opt::parse_from(&["test", "-a", "--field", "f"])
+    );
+    assert_eq!(
+        Opt {
+            arg: None,
+            field: Some(None)
+        },
+        Opt::parse_from(&["test", "--field"])
+    );
+    assert_eq!(
+        Opt {
+            arg: None,
+            field: None
+        },
+        Opt::parse_from(&["test"])
+    );
+}

@@ -17,6 +17,8 @@ use proc_macro2;
 use std::{env, mem};
 use syn;
 
+use derives;
+
 /// Default casing style for generated arguments.
 pub const DEFAULT_CASING: CasingStyle = CasingStyle::Verbatim;
 
@@ -31,6 +33,7 @@ pub enum Ty {
     Bool,
     Vec,
     Option,
+    OptionOption,
     Other,
 }
 #[derive(Debug)]
@@ -415,7 +418,10 @@ impl Attrs {
         {
             match segments.iter().last().unwrap().ident.to_string().as_str() {
                 "bool" => Ty::Bool,
-                "Option" => Ty::Option,
+                "Option" => match derives::sub_type(ty).map(Attrs::ty_from_field) {
+                    Some(Ty::Option) => Ty::OptionOption,
+                    _ => Ty::Option,
+                },
                 "Vec" => Ty::Vec,
                 _ => Ty::Other,
             }
@@ -445,7 +451,11 @@ impl Attrs {
                 if !res.methods.iter().all(|m| m.name == "help") {
                     panic!("methods in attributes is not allowed for subcommand");
                 }
-                res.kind = Kind::Subcommand(Self::ty_from_field(&field.ty));
+                let ty = Self::ty_from_field(&field.ty);
+                if ty == Ty::OptionOption {
+                    panic!("Option<Option<T>> type is not allowed for subcommand")
+                }
+                res.kind = Kind::Subcommand(ty);
             }
             Kind::Arg(_) => {
                 let mut ty = Self::ty_from_field(&field.ty);
@@ -470,6 +480,12 @@ impl Attrs {
                         }
                         if res.has_method("required") {
                             panic!("required is meaningless for Option")
+                        }
+                    }
+                    Ty::OptionOption => {
+                        // If it's a positional argument.
+                        if !(res.has_method("long") || res.has_method("short")) {
+                            panic!("Option<Option<T>> type is meaningless for positional argument")
                         }
                     }
                     _ => (),

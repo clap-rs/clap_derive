@@ -1,5 +1,7 @@
 # master
 
+* Support `Option<Option<T>>` type for fields by [@sphynx](https://github.com/sphynx)
+  ([#188](https://github.com/TeXitoi/structopt/issues/188))
 * Fix [#168](https://github.com/TeXitoi/structopt/issues/168) by [@TeXitoi](https://github.com/TeXitoi)
 * Introduce smarter parsing of doc comments by [@0ndorio](https://github.com/0ndorio)
 * Automatic naming of fields and subcommands by [@0ndorio](https://github.com/0ndorio)

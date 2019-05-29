@@ -128,6 +128,13 @@ pub fn gen_constructor(
                         matches.#value_of(#name)
                             .map(#parse)
                     },
+                    Ty::OptionOption => quote! {
+                        if matches.is_present(#name) {
+                            Some(matches.#value_of(#name).map(#parse))
+                        } else {
+                            None
+                        }
+                    },
                     Ty::Vec => quote! {
                         matches.#values_of(#name)
                             .map(|v| v.map(#parse).collect())

@@ -80,6 +80,7 @@ fn gen_app_augmentation(
             Kind::Arg(ty) => {
                 let convert_type = match ty {
                     Ty::Vec | Ty::Option => derives::sub_type(&field.ty).unwrap_or(&field.ty),
+                    Ty::OptionOption => derives::sub_type(&field.ty).and_then(derives::sub_type).unwrap_or(&field.ty),
                     _ => &field.ty,
                 };
 
@@ -103,6 +104,9 @@ fn gen_app_augmentation(
                 let modifier = match ty {
                     Ty::Bool => quote!(),
                     Ty::Option => quote!( .takes_value(true) #validator ),
+                    Ty::OptionOption => {
+                        quote! ( .takes_value(true).multiple(false).min_values(0).max_values(1) #validator )
+                    }
                     Ty::Vec => quote!( .takes_value(true).multiple(true) #validator ),
                     Ty::Other if occurrences => quote!( .multiple_occurrences(true) ),
                     Ty::Other => {
