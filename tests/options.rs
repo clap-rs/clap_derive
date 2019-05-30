@@ -198,3 +198,107 @@ fn two_option_options() {
         Opt::parse_from(&["test"])
     );
 }
+
+#[test]
+fn optional_vec() {
+    #[derive(Clap, PartialEq, Debug)]
+    struct Opt {
+        #[clap(short = "a")]
+        arg: Option<Vec<i32>>,
+    }
+    assert_eq!(
+        Opt { arg: Some(vec![1]) },
+        Opt::parse_from(&["test", "-a", "1"])
+    );
+
+    assert_eq!(
+        Opt {
+            arg: Some(vec![1, 2])
+        },
+        Opt::parse_from(&["test", "-a1", "-a2"])
+    );
+
+    assert_eq!(
+        Opt {
+            arg: Some(vec![1, 2])
+        },
+        Opt::parse_from(&["test", "-a1", "-a2", "-a"])
+    );
+
+    assert_eq!(
+        Opt {
+            arg: Some(vec![1, 2])
+        },
+        Opt::parse_from(&["test", "-a1", "-a", "-a2"])
+    );
+
+    assert_eq!(
+        Opt {
+            arg: Some(vec![1, 2])
+        },
+        Opt::parse_from(&["test", "-a", "1", "2"])
+    );
+
+    assert_eq!(
+        Opt {
+            arg: Some(vec![1, 2, 3])
+        },
+        Opt::parse_from(&["test", "-a", "1", "2", "-a", "3"])
+    );
+
+    assert_eq!(
+        Opt { arg: Some(vec![]) },
+        Opt::parse_from(&["test", "-a"])
+    );
+
+    assert_eq!(
+        Opt { arg: Some(vec![]) },
+        Opt::parse_from(&["test", "-a", "-a"])
+    );
+
+    assert_eq!(
+        Opt { arg: None },
+        Opt::parse_from(&["test"])
+    );
+}
+
+#[test]
+fn two_optional_vecs() {
+    #[derive(Clap, PartialEq, Debug)]
+    struct Opt {
+        #[clap(short = "a")]
+        arg: Option<Vec<i32>>,
+
+        #[clap(short = "b")]
+        b: Option<Vec<i32>>,
+    }
+
+    assert_eq!(
+        Opt {
+            arg: Some(vec![1]),
+            b: Some(vec![])
+        },
+        Opt::parse_from(&["test", "-a", "1", "-b"])
+    );
+
+    assert_eq!(
+        Opt {
+            arg: Some(vec![1]),
+            b: Some(vec![])
+        },
+        Opt::parse_from(&["test", "-a", "-b", "-a1"])
+    );
+
+    assert_eq!(
+        Opt {
+            arg: Some(vec![1, 2]),
+            b: Some(vec![1, 2])
+        },
+        Opt::parse_from(&["test", "-a1", "-a2", "-b1", "-b2"])
+    );
+
+    assert_eq!(
+        Opt { arg: None, b: None },
+        Opt::parse_from(&["test"])
+    );
+}

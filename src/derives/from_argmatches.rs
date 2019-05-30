@@ -135,6 +135,15 @@ pub fn gen_constructor(
                             None
                         }
                     },
+                    Ty::OptionVec => quote! {
+                        if matches.is_present(#name) {
+                            Some(matches.#values_of(#name)
+                                 .map(|v| v.map(#parse).collect())
+                                 .unwrap_or_else(Vec::new))
+                        } else {
+                            None
+                        }
+                    },
                     Ty::Vec => quote! {
                         matches.#values_of(#name)
                             .map(|v| v.map(#parse).collect())
