@@ -175,10 +175,9 @@ impl Attrs {
             .filter_map(|attr| {
                 let path = &attr.path;
                 match quote!(#path).to_string().as_ref() {
-                    "clap" => Some(
-                        attr.interpret_meta()
-                            .expect(&format!("invalid clap_derive syntax: {}", quote!(#attr))),
-                    ),
+                    "clap" => Some(attr.parse_meta().unwrap_or_else(|e| {
+                        panic!("invalid clap_derive syntax: {}: {}", e, quote!(#attr))
+                    })),
                     _ => None,
                 }
             })
