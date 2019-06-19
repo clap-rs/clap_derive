@@ -1,0 +1,5 @@
+error[E0599]: no method named `non_existing_attribute` found for type `clap::Arg<'_>` in the current scope
+  --> $DIR/non_existent_attr.rs:13:10
+   |
+13 | #[derive(Clap, Debug)]
+   |          ^^^^
