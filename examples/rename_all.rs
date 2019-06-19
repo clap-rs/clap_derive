@@ -1,7 +1,7 @@
 //! Example on how the `rename_all` parameter works.
 //!
 //! `rename_all` can be used to override the casing style used during argument
-//! generation. By default the `verbatim-case` style will be used but there are a wide
+//! generation. By default the `kebab-case` style will be used but there are a wide
 //! variety of other styles available.
 //!
 //! ## Supported styles overview:
@@ -59,13 +59,13 @@ enum Opt {
 
 #[derive(Clap, Debug)]
 enum Subcommands {
-    // This one will be available as `FirstSubcommand`.
+    // This one will be available as `first-subcommand`.
     FirstSubcommand,
 }
 
 #[derive(Clap, Debug)]
 struct BonusOptions {
-    // And this one will be available as `baz_option`.
+    // And this one will be available as `baz-option`.
     #[clap(long)]
     baz_option: bool,
 }

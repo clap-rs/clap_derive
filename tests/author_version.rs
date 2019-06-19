@@ -32,11 +32,11 @@ fn no_author_version_about() {
     assert!(output.starts_with("foo \n\nUSAGE:"));
 }
 
-static ENV_HELP: &str = "clap_derive 0.3.0
+static ENV_HELP: &str = "clap-derive 0.3.0
 Guillaume Pinot <texitoi@texitoi.eu>, Kevin K. <kbknapp@gmail.com>, hoverbear <andrew@hoverbear.org>
 
 USAGE:
-    clap_derive
+    clap-derive
 
 FLAGS:
     -h, --help       

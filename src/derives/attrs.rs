@@ -20,7 +20,7 @@ use syn;
 use derives;
 
 /// Default casing style for generated arguments.
-pub const DEFAULT_CASING: CasingStyle = CasingStyle::Verbatim;
+pub const DEFAULT_CASING: CasingStyle = CasingStyle::Kebab;
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Kind {

@@ -4,7 +4,7 @@ extern crate clap;
 use clap::Clap;
 
 #[test]
-fn test_single_word_enum_variant_is_default_renamed_into_verbatim_case() {
+fn test_single_word_enum_variant_is_default_renamed_into_kebab_case() {
     #[derive(Clap, Debug, PartialEq)]
     enum Opt {
         Command { foo: u32 },
@@ -12,7 +12,7 @@ fn test_single_word_enum_variant_is_default_renamed_into_verbatim_case() {
 
     assert_eq!(
         Opt::Command { foo: 0 },
-        Opt::parse_from(&["test", "Command", "0"])
+        Opt::parse_from(&["test", "command", "0"])
     );
 }
 
@@ -25,12 +25,12 @@ fn test_multi_word_enum_variant_is_renamed() {
 
     assert_eq!(
         Opt::FirstCommand { foo: 0 },
-        Opt::parse_from(&["test", "FirstCommand", "0"])
+        Opt::parse_from(&["test", "first-command", "0"])
     );
 }
 
 #[test]
-fn test_standalone_long_generates_verbatim_case() {
+fn test_standalone_long_generates_kebab_case() {
     #[derive(Clap, Debug, PartialEq)]
     #[allow(non_snake_case)]
     struct Opt {
@@ -40,7 +40,7 @@ fn test_standalone_long_generates_verbatim_case() {
 
     assert_eq!(
         Opt { FOO_OPTION: true },
-        Opt::parse_from(&["test", "--FOO_OPTION"])
+        Opt::parse_from(&["test", "--foo-option"])
     );
 }
 
@@ -82,12 +82,12 @@ fn test_standalone_long_ignores_afterwards_defined_custom_name() {
 
     assert_eq!(
         Opt { foo_option: true },
-        Opt::parse_from(&["test", "--foo_option"])
+        Opt::parse_from(&["test", "--foo-option"])
     );
 }
 
 #[test]
-fn test_standalone_short_generates_verbatim_case() {
+fn test_standalone_short_generates_kebab_case() {
     #[derive(Clap, Debug, PartialEq)]
     #[allow(non_snake_case)]
     struct Opt {
@@ -97,7 +97,7 @@ fn test_standalone_short_generates_verbatim_case() {
 
     assert_eq!(
         Opt { FOO_OPTION: true },
-        Opt::parse_from(&["test", "-F"])
+        Opt::parse_from(&["test", "-f"])
     );
 }
 
@@ -259,7 +259,7 @@ fn test_rename_all_is_not_propagated_from_struct_into_subcommand() {
         Opt {
             foo: Foo::Command { foo: true }
         },
-        Opt::parse_from(&["test", "Command", "--foo"])
+        Opt::parse_from(&["test", "command", "--foo"])
     );
 }
 

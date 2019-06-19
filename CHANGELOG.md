@@ -8,7 +8,8 @@
   ([#188](https://github.com/TeXitoi/structopt/issues/188))
 * Fix [#168](https://github.com/TeXitoi/structopt/issues/168) by [@TeXitoi](https://github.com/TeXitoi)
 * Introduce smarter parsing of doc comments by [@0ndorio](https://github.com/0ndorio)
-* Automatic naming of fields and subcommands by [@0ndorio](https://github.com/0ndorio)
+* Automatic naming of fields and subcommands by [@0ndorio](https://github.com/0ndorio). Default case is 'Kebab'
+
 * Upgrade syn to 0.15 by [@konstin](https://github.com/konstin)
 
 # v0.2.10 (2018-06-07)

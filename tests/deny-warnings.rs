@@ -51,6 +51,6 @@ fn warning_never_enum() {
         Opt::Foo {
             s: "foo".to_string()
         },
-        Opt::parse_from(&["test", "Foo", "foo"])
+        Opt::parse_from(&["test", "foo", "foo"])
     );
 }

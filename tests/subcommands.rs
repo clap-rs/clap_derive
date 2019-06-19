@@ -213,7 +213,7 @@ fn flatten_enum() {
 
     assert!(Opt::try_parse_from(&["test"]).is_err());
     assert_eq!(
-        Opt::parse_from(&["test", "Foo"]),
+        Opt::parse_from(&["test", "foo"]),
         Opt {
             sub_cmd: SubCmd::Foo
         }
