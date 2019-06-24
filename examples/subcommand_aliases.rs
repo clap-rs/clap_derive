@@ -1,21 +1,22 @@
 #[macro_use]
-extern crate clap;
+extern crate structopt;
 
-use clap::{AppSettings, Clap};
+use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
-#[derive(Clap, Debug)]
+#[derive(StructOpt, Debug)]
 // https://docs.rs/clap/2/clap/enum.AppSettings.html#variant.InferSubcommands
-#[clap(raw(setting = "AppSettings::InferSubcommands"))]
+#[structopt(setting = AppSettings::InferSubcommands)]
 enum Opt {
     // https://docs.rs/clap/2/clap/struct.App.html#method.alias
-    #[clap(name = "foo", alias = "foobar")]
+    #[structopt(name = "foo", alias = "foobar")]
     Foo,
     // https://docs.rs/clap/2/clap/struct.App.html#method.aliases
-    #[clap(name = "bar", raw(aliases = r#"&["baz", "fizz"]"#))]
+    #[structopt(name = "bar", aliases = &["baz", "fizz"])]
     Bar,
 }
 
 fn main() {
-    let opt = Opt::parse();
+    let opt = Opt::from_args();
     println!("{:?}", opt);
 }

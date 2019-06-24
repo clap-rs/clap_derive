@@ -1,19 +1,20 @@
 #[macro_use]
-extern crate clap;
+extern crate structopt;
 
-use clap::{AppSettings, Clap};
+use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
-#[derive(Clap, Debug)]
-#[clap(
+#[derive(StructOpt, Debug)]
+#[structopt(
     name = "no_version",
     about = "",
     version = "",
     author = "",
-    raw(global_setting = "AppSettings::DisableVersion")
+    global_settings = &[AppSettings::DisableVersion]
 )]
 struct Opt {}
 
 fn main() {
-    let opt = Opt::parse();
+    let opt = Opt::from_args();
     println!("{:?}", opt);
 }

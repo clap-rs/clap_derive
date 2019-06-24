@@ -1,15 +1,15 @@
 #[macro_use]
-extern crate clap;
+extern crate structopt;
 
-use clap::Clap;
+use structopt::StructOpt;
 
-#[derive(Clap, Debug)]
+#[derive(StructOpt, Debug)]
 struct Opt {
-    #[clap(raw(required = "true", min_values = "2"))]
+    #[structopt(required = true, min_values = 2)]
     foos: Vec<String>,
 }
 
 fn main() {
-    let opt = Opt::parse();
+    let opt = Opt::from_args();
     println!("{:?}", opt);
 }

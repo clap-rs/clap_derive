@@ -1,8 +1,8 @@
 #[macro_use]
-extern crate clap;
+extern crate structopt;
 
-use clap::Clap;
 use std::error::Error;
+use structopt::StructOpt;
 
 fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<Error>>
 where
@@ -17,13 +17,13 @@ where
     Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
 }
 
-#[derive(Clap, Debug)]
+#[derive(StructOpt, Debug)]
 struct Opt {
-    #[clap(short = "D", parse(try_from_str = "parse_key_val"))]
+    #[structopt(short = "D", parse(try_from_str = parse_key_val))]
     defines: Vec<(String, i32)>,
 }
 
 fn main() {
-    let opt = Opt::parse();
+    let opt = Opt::from_args();
     println!("{:?}", opt);
 }
