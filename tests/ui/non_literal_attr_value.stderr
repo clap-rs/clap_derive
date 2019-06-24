@@ -1,7 +1,0 @@
-error: proc-macro derive panicked
-  --> $DIR/non_literal_attr_value.rs:13:10
-   |
-13 | #[derive(Clap, Debug)]
-   |          ^^^^
-   |
-   = help: message: invalid clap_derive syntax: expected literal: # [ clap ( short , aliases = & [ "debug" , "dbg" ] ) ]

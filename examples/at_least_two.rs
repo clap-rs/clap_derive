@@ -5,7 +5,7 @@ use clap::Clap;
 
 #[derive(Clap, Debug)]
 struct Opt {
-    #[clap(raw(required = "true", min_values = "2"))]
+    #[clap(required = true, min_values = 2)]
     foos: Vec<String>,
 }
 

@@ -52,18 +52,6 @@ fn argument_with_default() {
 }
 
 #[test]
-fn argument_with_raw_default() {
-    #[derive(Clap, PartialEq, Debug)]
-    struct Opt {
-        #[clap(raw(default_value = r#""42""#))]
-        arg: i32,
-    }
-    assert_eq!(Opt { arg: 24 }, Opt::parse_from(&["test", "24"]));
-    assert_eq!(Opt { arg: 42 }, Opt::parse_from(&["test"]));
-    assert!(Opt::try_parse_from(&["test", "42", "24"]).is_err());
-}
-
-#[test]
 fn arguments() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {

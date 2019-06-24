@@ -59,7 +59,7 @@ fn option_with_default() {
 fn option_with_raw_default() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a", raw(default_value = r#""42""#))]
+        #[clap(short = "a", default_value = "42")]
         arg: i32,
     }
     assert_eq!(Opt { arg: 24 }, Opt::parse_from(&["test", "-a24"]));

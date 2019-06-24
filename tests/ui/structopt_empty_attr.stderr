@@ -4,4 +4,4 @@ error: proc-macro derive panicked
 13 | #[derive(Clap, Debug)]
    |          ^^^^
    |
-   = help: message: unsupported syntax: clap
+   = help: message: unexpected end of input, expected parentheses,

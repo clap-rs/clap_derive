@@ -17,7 +17,7 @@ fn vers_arg_group() -> ArgGroup<'static> {
 }
 
 #[derive(Clap, Debug)]
-#[clap(raw(group = "vers_arg_group()"))]
+#[clap(group = vers_arg_group())]
 struct Opt {
     /// set the version manually
     #[clap(long = "set-ver", group = "vers")]

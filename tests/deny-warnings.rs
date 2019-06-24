@@ -27,7 +27,7 @@ fn try_str(s: &str) -> Result<String, !> { Ok(s.into()) }
 fn warning_never_struct() {
     #[derive(Debug, PartialEq, Clap)]
     struct Opt {
-        #[clap(parse(try_from_str = "try_str"))]
+        #[clap(parse(try_from_str = try_str))]
         s: String,
     }
     assert_eq!(
@@ -43,7 +43,7 @@ fn warning_never_enum() {
     #[derive(Debug, PartialEq, Clap)]
     enum Opt {
         Foo {
-            #[clap(parse(try_from_str = "try_str"))]
+            #[clap(parse(try_from_str = try_str))]
             s: String,
         },
     }

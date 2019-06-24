@@ -22,7 +22,7 @@ travis-ci = { repository = "clap-rs/clap_derive" }
 appveyor = { repository = "https://github.com/clap-rs/clap_derive", service = "github" }
 
 [dependencies]
-syn = "0.15.39"
+syn = { version = "0.15.39", features = ["full"] }
 quote = "0.6"
 proc-macro2 = "0.4"
 heck = "^0.3.0"

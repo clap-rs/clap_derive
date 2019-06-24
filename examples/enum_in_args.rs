@@ -15,7 +15,7 @@ arg_enum! {
 #[derive(Clap, Debug)]
 struct Opt {
     /// Important argument.
-    #[clap(raw(possible_values = "&Baz::variants()", case_insensitive = "true"))]
+    #[clap(possible_values = &Baz::variants(), case_insensitive = true)]
     i: Baz,
 }
 

@@ -64,7 +64,7 @@ fn parse_hex(input: &str) -> Result<u64, ParseIntError> { u64::from_str_radix(in
 
 #[derive(Clap, PartialEq, Debug)]
 struct HexOpt {
-    #[clap(short = "n", parse(try_from_str = "parse_hex"))]
+    #[clap(short = "n", parse(try_from_str = parse_hex))]
     number: u64,
 }
 
@@ -90,13 +90,13 @@ fn custom_parser_4(_: &OsStr) -> Result<&'static str, String> { Ok("D") }
 
 #[derive(Clap, PartialEq, Debug)]
 struct NoOpOpt {
-    #[clap(short = "a", parse(from_str = "custom_parser_1"))]
+    #[clap(short = "a", parse(from_str = custom_parser_1))]
     a: &'static str,
-    #[clap(short = "b", parse(try_from_str = "custom_parser_2"))]
+    #[clap(short = "b", parse(try_from_str = custom_parser_2))]
     b: &'static str,
-    #[clap(short = "c", parse(from_os_str = "custom_parser_3"))]
+    #[clap(short = "c", parse(from_os_str = custom_parser_3))]
     c: &'static str,
-    #[clap(short = "d", parse(try_from_os_str = "custom_parser_4"))]
+    #[clap(short = "d", parse(try_from_os_str = custom_parser_4))]
     d: &'static str,
 }
 
@@ -168,11 +168,7 @@ struct Occurrences {
     #[clap(short = "r", parse(from_occurrences))]
     little_unsigned: u8,
 
-    #[clap(
-        short = "c",
-        long = "custom",
-        parse(from_occurrences = "foo")
-    )]
+    #[clap(short = "c", long = "custom", parse(from_occurrences = foo))]
     custom: Foo,
 }
 
@@ -203,17 +199,17 @@ fn test_custom_bool() {
     }
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "d", parse(try_from_str = "parse_bool"))]
+        #[clap(short = "d", parse(try_from_str = parse_bool))]
         debug: bool,
         #[clap(
             short = "v",
             default_value = "false",
-            parse(try_from_str = "parse_bool")
+            parse(try_from_str = parse_bool)
         )]
         verbose: bool,
-        #[clap(short = "t", parse(try_from_str = "parse_bool"))]
+        #[clap(short = "t", parse(try_from_str = parse_bool))]
         tribool: Option<bool>,
-        #[clap(short = "b", parse(try_from_str = "parse_bool"))]
+        #[clap(short = "b", parse(try_from_str = parse_bool))]
         bitset: Vec<bool>,
     }
 
