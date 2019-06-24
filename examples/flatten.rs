@@ -1,25 +1,22 @@
-#[macro_use]
-extern crate clap;
+use structopt::StructOpt;
 
-use clap::Clap;
-
-#[derive(Clap, Debug)]
+#[derive(StructOpt, Debug)]
 struct Cmdline {
-    #[clap(short = "v", help = "switch on verbosity")]
+    #[structopt(short = "v", help = "switch on verbosity")]
     verbose: bool,
-    #[clap(flatten)]
+    #[structopt(flatten)]
     daemon_opts: DaemonOpts,
 }
 
-#[derive(Clap, Debug)]
+#[derive(StructOpt, Debug)]
 struct DaemonOpts {
-    #[clap(short = "u", help = "daemon user")]
+    #[structopt(short = "u", help = "daemon user")]
     user: String,
-    #[clap(short = "g", help = "daemon group")]
+    #[structopt(short = "g", help = "daemon group")]
     group: String,
 }
 
 fn main() {
-    let opt = Cmdline::parse();
+    let opt = Cmdline::from_args();
     println!("{:?}", opt);
 }

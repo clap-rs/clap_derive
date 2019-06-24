@@ -3,38 +3,35 @@
 //! Documentation can be added either through doc comments or the
 //! `about` attribute.
 
-#[macro_use]
-extern crate clap;
+use structopt::StructOpt;
 
-use clap::Clap;
-
-#[derive(Clap, Debug)]
-#[clap(name = "git")]
+#[derive(StructOpt, Debug)]
+#[structopt(name = "git")]
 /// the stupid content tracker
 enum Opt {
-    #[clap(name = "fetch")]
+    #[structopt(name = "fetch")]
     /// fetch branches from remote repository
     Fetch {
-        #[clap(long = "dry-run")]
+        #[structopt(long = "dry-run")]
         dry_run: bool,
-        #[clap(long = "all")]
+        #[structopt(long = "all")]
         all: bool,
-        #[clap(default_value = "origin")]
+        #[structopt(default_value = "origin")]
         repository: String,
     },
-    #[clap(name = "add")]
+    #[structopt(name = "add")]
     /// add files to the staging area
     Add {
-        #[clap(short = "i")]
+        #[structopt(short = "i")]
         interactive: bool,
-        #[clap(short = "a")]
+        #[structopt(short = "a")]
         all: bool,
         files: Vec<String>,
     },
 }
 
 fn main() {
-    let matches = Opt::parse();
+    let matches = Opt::from_args();
 
     println!("{:?}", matches);
 }

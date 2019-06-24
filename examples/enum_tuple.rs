@@ -1,27 +1,24 @@
-#[macro_use]
-extern crate clap;
+use structopt::StructOpt;
 
-use clap::Clap;
-
-#[derive(Debug, Clap)]
+#[derive(Debug, StructOpt)]
 pub struct Foo {
     pub bar: Option<String>,
 }
 
-#[derive(Debug, Clap)]
+#[derive(Debug, StructOpt)]
 pub enum Command {
-    #[clap(name = "foo")]
+    #[structopt(name = "foo")]
     Foo(Foo),
 }
 
-#[derive(Debug, Clap)]
-#[clap(name = "classify")]
+#[derive(Debug, StructOpt)]
+#[structopt(name = "classify")]
 pub struct ApplicationArguments {
-    #[clap(subcommand)]
+    #[structopt(subcommand)]
     pub command: Command,
 }
 
 fn main() {
-    let opt = ApplicationArguments::parse();
+    let opt = ApplicationArguments::from_args();
     println!("{:?}", opt);
 }
