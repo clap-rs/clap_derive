@@ -180,7 +180,7 @@ fn gen_augment_app_for_enum(
                     }
                 }
             }
-            Unnamed(..) => panic!("{}: tuple enum are not supported", variant.ident),
+            Unnamed(..) => panic!("{}: tuple enums are not supported", variant.ident),
         };
 
         let name = attrs.cased_name();
@@ -221,7 +221,7 @@ fn gen_from_subcommand(
                 let ty = &fields.unnamed[0];
                 quote!( ( <#ty as ::clap::FromArgMatches>::from_argmatches(matches) ) )
             }
-            Unnamed(..) => panic!("{}: tuple enum are not supported", variant.ident),
+            Unnamed(..) => panic!("{}: tuple enums are not supported", variant.ident),
         };
 
         quote! {

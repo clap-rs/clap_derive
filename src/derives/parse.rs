@@ -130,21 +130,18 @@ pub fn parse_clap_attributes(all_attrs: &[Attribute]) -> Vec<ClapAttr> {
     let mut s_opt_attrs: Vec<ClapAttr> = vec![];
     for attr in all_attrs {
         let path = &attr.path;
-        match quote!(#path).to_string().as_ref() {
-            "clap" => {
-                let tokens = attr.tts.clone();
-                let is_empty = tokens.is_empty();
-                let so_attrs: ClapAttributes = syn::parse2(tokens).unwrap_or_else(|err| {
-                    let tokens_str = if is_empty {
-                        String::new()
-                    } else {
-                        format!("problematic tokens: {}", &attr.tts)
-                    };
-                    panic!("{}, {}", err.to_string(), tokens_str)
-                });
-                s_opt_attrs.extend(so_attrs.attrs);
-            }
-            _ => {}
+        if let "clap" = quote!(#path).to_string().as_ref() {
+            let tokens = attr.tts.clone();
+            let is_empty = tokens.is_empty();
+            let so_attrs: ClapAttributes = syn::parse2(tokens).unwrap_or_else(|err| {
+                let tokens_str = if is_empty {
+                    String::new()
+                } else {
+                    format!("problematic tokens: {}", &attr.tts)
+                };
+                panic!("{}, {}", err.to_string(), tokens_str)
+            });
+            s_opt_attrs.extend(so_attrs.attrs);
         }
     }
     s_opt_attrs

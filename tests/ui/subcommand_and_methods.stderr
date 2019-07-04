@@ -4,4 +4,4 @@ error: proc-macro derive panicked
 13 | #[derive(Clap)]
    |          ^^^^
    |
-   = help: message: methods in attributes is not allowed for subcommand
+   = help: message: methods in attributes are not allowed for subcommand
