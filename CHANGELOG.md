@@ -1,5 +1,7 @@
 # master
 
+* Support skipping struct fields by [@sphynx](https://github.com/sphynx)
+ ([#174](https://github.com/TeXitoi/structopt/issues/174))
 * Support optional vectors of arguments for distinguishing between `-o 1 2`, `-o` and no option provided at all
   by [@sphynx](https://github.com/sphynx)
   ([#180](https://github.com/TeXitoi/structopt/issues/188))

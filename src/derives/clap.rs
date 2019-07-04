@@ -65,7 +65,7 @@ fn gen_app_augmentation(
     let args = fields.iter().filter_map(|field| {
         let attrs = Attrs::from_field(field, parent_attribute.casing());
         match attrs.kind() {
-            Kind::Subcommand(_) => None,
+            Kind::Subcommand(_) | Kind::Skip => None,
             Kind::FlattenStruct => {
                 let ty = &field.ty;
                 Some(quote! {

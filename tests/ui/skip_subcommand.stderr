@@ -1,7 +1,7 @@
 error: proc-macro derive panicked
-  --> $DIR/subcommand_and_flatten.rs:13:10
+  --> $DIR/skip_subcommand.rs:11:10
    |
-13 | #[derive(Clap)]
+11 | #[derive(Clap)]
    |          ^^^^
    |
    = help: message: subcommand, flatten and skip cannot be used together

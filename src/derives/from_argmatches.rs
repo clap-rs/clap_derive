@@ -102,6 +102,7 @@ pub fn gen_constructor(
             Kind::FlattenStruct => {
                 quote!(#field_name: ::clap::FromArgMatches::from_argmatches(matches))
             }
+            Kind::Skip => quote!(#field_name: Default::default()),
             Kind::Arg(ty) => {
                 use self::Parser::*;
                 let (value_of, values_of, parse) = match *attrs.parser() {

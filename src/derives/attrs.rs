@@ -27,6 +27,7 @@ pub enum Kind {
     Arg(Ty),
     Subcommand(Ty),
     FlattenStruct,
+    Skip,
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -193,6 +194,10 @@ impl Attrs {
                     self.set_kind(Kind::FlattenStruct);
                 }
 
+                Skip => {
+                    self.set_kind(Kind::Skip);
+                }
+
                 NameLitStr(name, lit) => {
                     self.push_str_method(&name.to_string(), &lit.value());
                 }
@@ -356,6 +361,7 @@ impl Attrs {
         match res.kind {
             Kind::Subcommand(_) => panic!("subcommand is only allowed on fields"),
             Kind::FlattenStruct => panic!("flatten is only allowed on fields"),
+            Kind::Skip => panic!("skip is only allowed on fields"),
             Kind::Arg(_) => res,
         }
     }
@@ -415,6 +421,11 @@ impl Attrs {
 
                 res.kind = Kind::Subcommand(ty);
             }
+            Kind::Skip => {
+                if !res.methods.iter().all(|m| m.name == "help") {
+                    panic!("methods are not allowed for skipped fields");
+                }
+            }
             Kind::Arg(_) => {
                 let mut ty = Self::ty_from_field(&field.ty);
                 if res.has_custom_parser {
@@ -465,7 +476,7 @@ impl Attrs {
         if let Kind::Arg(_) = self.kind {
             self.kind = kind;
         } else {
-            panic!("subcommands cannot be flattened");
+            panic!("subcommand, flatten and skip cannot be used together");
         }
     }
     pub fn has_method(&self, method: &str) -> bool {
