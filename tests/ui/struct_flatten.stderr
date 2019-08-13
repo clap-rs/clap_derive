@@ -1,7 +1,5 @@
-error: proc-macro derive panicked
-  --> $DIR/struct_flatten.rs:13:10
+error: flatten is only allowed on fields
+  --> $DIR/struct_flatten.rs:12:24
    |
-13 | #[derive(Clap, Debug)]
-   |          ^^^^
-   |
-   = help: message: flatten is only allowed on fields
+12 | #[clap(name = "basic", flatten)]
+   |                        ^^^^^^^

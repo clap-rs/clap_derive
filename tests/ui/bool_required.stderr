@@ -1,7 +1,5 @@
-error: proc-macro derive panicked
-  --> $DIR/bool_required.rs:13:10
+error: required is meaningless for bool
+  --> $DIR/bool_required.rs:14:19
    |
-13 | #[derive(Clap, Debug)]
-   |          ^^^^
-   |
-   = help: message: required is meaningless for bool
+14 |     #[clap(short, required = true)]
+   |                   ^^^^^^^^

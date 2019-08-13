@@ -1,7 +1,5 @@
-error: proc-macro derive panicked
-  --> $DIR/struct_parse.rs:13:10
+error: parse attribute is only allowed on fields
+  --> $DIR/struct_parse.rs:12:24
    |
-13 | #[derive(Clap, Debug)]
-   |          ^^^^
-   |
-   = help: message: parse attribute is only allowed on fields
+12 | #[clap(name = "basic", parse(from_str))]
+   |                        ^^^^^

@@ -6,8 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-extern crate clap;
-
 use clap::Clap;
 
 #[derive(Clap, Debug)]
@@ -17,7 +15,4 @@ struct Opt {
     n: Option<u32>,
 }
 
-fn main() {
-    let opt = Opt::from_args();
-    println!("{:?}", opt);
-}
+fn main() {}

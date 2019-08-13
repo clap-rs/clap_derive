@@ -1,7 +1,5 @@
-error: proc-macro derive panicked
-  --> $DIR/subcommand_and_parse.rs:13:10
+error: parse attribute is not allowed for subcommand
+  --> $DIR/subcommand_and_parse.rs:17:24
    |
-13 | #[derive(Clap)]
-   |          ^^^^
-   |
-   = help: message: parse attribute is not allowed for subcommand
+17 |     #[clap(subcommand, parse(from_occurrences))]
+   |                        ^^^^^

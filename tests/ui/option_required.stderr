@@ -1,7 +1,5 @@
-error: proc-macro derive panicked
-  --> $DIR/option_required.rs:13:10
+error: required is meaningless for Option
+  --> $DIR/option_required.rs:14:19
    |
-13 | #[derive(Clap, Debug)]
-   |          ^^^^
-   |
-   = help: message: required is meaningless for Option
+14 |     #[clap(short, required = true)]
+   |                   ^^^^^^^^

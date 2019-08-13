@@ -1,7 +1,5 @@
-error: proc-macro derive panicked
-  --> $DIR/parse_empty_try_from_os.rs:13:10
+error: cannot omit parser function name with `try_from_os_str`
+  --> $DIR/parse_empty_try_from_os.rs:14:18
    |
-13 | #[derive(Clap, Debug)]
-   |          ^^^^
-   |
-   = help: message: cannot omit parser function name with `try_from_os_str`
+14 |     #[clap(parse(try_from_os_str))]
+   |                  ^^^^^^^^^^^^^^^

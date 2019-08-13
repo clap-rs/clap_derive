@@ -1,7 +1,5 @@
-error: proc-macro derive panicked
-  --> $DIR/subcommand_opt_opt.rs:13:10
+error: Option<Option<T>> type is not allowed for subcommand
+  --> $DIR/subcommand_opt_opt.rs:18:10
    |
-13 | #[derive(Clap)]
-   |          ^^^^
-   |
-   = help: message: Option<Option<T>> type is not allowed for subcommand
+18 |     cmd: Option<Option<Command>>,
+   |          ^^^^^^

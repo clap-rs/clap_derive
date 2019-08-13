@@ -16,6 +16,7 @@ use syn;
 pub mod arg_enum;
 pub mod attrs;
 pub mod parse;
+pub mod spanned;
 mod clap;
 mod from_argmatches;
 mod into_app;

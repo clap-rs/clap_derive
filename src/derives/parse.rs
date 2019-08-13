@@ -1,6 +1,8 @@
+use proc_macro_error::{span_error, ResultExt};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use syn::{self, Attribute, Expr, Ident, LitStr};
+use syn::spanned::Spanned;
+use syn::{self, parenthesized, parse2, Attribute, Expr, Ident, LitStr, Token};
 
 pub struct ClapAttributes {
     pub paren_token: syn::token::Paren,
@@ -10,6 +12,7 @@ pub struct ClapAttributes {
 impl Parse for ClapAttributes {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
+
         Ok(ClapAttributes {
             paren_token: parenthesized!(content in input),
             attrs: content.parse_terminated(ClapAttr::parse)?,
@@ -18,13 +21,13 @@ impl Parse for ClapAttributes {
 }
 
 pub enum ClapAttr {
-    Short,
-    Long,
-    Flatten,
-    Subcommand,
-    Skip,
-    Parse(ParserSpec),
-    RenameAll(LitStr),
+    Short(Ident),
+    Long(Ident),
+    Flatten(Ident),
+    Subcommand(Ident),
+    Skip(Ident),
+    Parse(Ident, ParserSpec),
+    RenameAll(Ident, LitStr),
     NameLitStr(Ident, LitStr),
     NameExpr(Ident, Expr),
     MethodCall(Ident, Punctuated<Expr, Token![,]>),
@@ -44,7 +47,7 @@ impl Parse for ClapAttr {
             match name_str.as_ref() {
                 "rename_all" => {
                     let casing_lit: LitStr = input.parse()?;
-                    Ok(RenameAll(casing_lit))
+                    Ok(RenameAll(name, casing_lit))
                 }
 
                 _ => {
@@ -68,17 +71,9 @@ impl Parse for ClapAttr {
                         nested.parse_terminated(ParserSpec::parse)?;
 
                     if parser_specs.len() == 1 {
-                        Ok(Parse(parser_specs[0].clone()))
+                        Ok(Parse(name, parser_specs[0].clone()))
                     } else {
-                        // Use `Error::new` instead of `input.error(...)`
-                        // because when `input.error` tries to locate current span
-                        // and sees that there is no tokens left to parse it adds
-                        // 'unexpected end of input` to the error message, which is
-                        // undesirable and misleading.
-                        Err(syn::Error::new(
-                            nested.cursor().span(),
-                            "parse must have exactly one argument",
-                        ))
+                        span_error!(name.span(), "parse must have exactly one argument")
                     }
                 }
 
@@ -90,15 +85,12 @@ impl Parse for ClapAttr {
         } else {
             // Attributes represented with a sole identifier.
             match name_str.as_ref() {
-                "long" => Ok(Long),
-                "short" => Ok(Short),
-                "flatten" => Ok(Flatten),
-                "subcommand" => Ok(Subcommand),
-                "skip" => Ok(Skip),
-                _ => {
-                    let msg = format!("unexpected attribute: {}", name_str);
-                    Err(input.error(&msg))
-                }
+                "long" => Ok(Long(name)),
+                "short" => Ok(Short(name)),
+                "flatten" => Ok(Flatten(name)),
+                "subcommand" => Ok(Subcommand(name)),
+                "skip" => Ok(Skip(name)),
+                _ => span_error!(name.span(), "unexpected attribute: {}", name_str),
             }
         }
     }
@@ -112,9 +104,10 @@ pub struct ParserSpec {
 }
 
 impl Parse for ParserSpec {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let err_msg = "unknown value parser specification";
-        let kind = input.parse().map_err(|_| input.error(err_msg))?;
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+        let kind = input
+            .parse()
+            .map_err(|_| input.error("parser specification must start with identifier"))?;
         let eq_token = input.parse()?;
         let parse_func = match eq_token {
             None => None,
@@ -129,22 +122,23 @@ impl Parse for ParserSpec {
 }
 
 pub fn parse_clap_attributes(all_attrs: &[Attribute]) -> Vec<ClapAttr> {
-    let mut s_opt_attrs: Vec<ClapAttr> = vec![];
-    for attr in all_attrs {
-        let path = &attr.path;
-        if let "clap" = quote!(#path).to_string().as_ref() {
-            let tokens = attr.tts.clone();
-            let is_empty = tokens.is_empty();
-            let so_attrs: ClapAttributes = syn::parse2(tokens).unwrap_or_else(|err| {
-                let tokens_str = if is_empty {
-                    String::new()
-                } else {
-                    format!("problematic tokens: {}", &attr.tts)
-                };
-                panic!("{}, {}", err.to_string(), tokens_str)
-            });
-            s_opt_attrs.extend(so_attrs.attrs);
-        }
-    }
-    s_opt_attrs
+    all_attrs
+        .iter()
+        .filter(|attr| attr.path.is_ident("clap"))
+        .flat_map(|attr| {
+            let attrs: ClapAttributes = parse2(attr.tts.clone())
+                .map_err(|e| match &*e.to_string() {
+                    // this error message is misleading and points to Span::call_site()
+                    // so we patch it with something meaningful
+                    "unexpected end of input, expected parentheses" => {
+                        let span = attr.path.span();
+                        let patch_msg = "expected parentheses after `clap`";
+                        syn::Error::new(span, patch_msg)
+                    }
+                    _ => e,
+                })
+                .unwrap_or_exit();
+            attrs.attrs
+        })
+        .collect()
 }

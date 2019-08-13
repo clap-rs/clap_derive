@@ -6,8 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-extern crate clap;
-
 use clap::Clap;
 
 #[derive(Clap)]
@@ -32,7 +30,4 @@ enum Command {
     },
 }
 
-fn main() {
-    let opt = Opt::from_args();
-    println!("{:?}", opt);
-}
+fn main() {}

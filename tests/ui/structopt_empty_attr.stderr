@@ -1,7 +1,5 @@
-error: proc-macro derive panicked
-  --> $DIR/structopt_empty_attr.rs:13:10
+error: expected parentheses after `clap`
+  --> $DIR/structopt_empty_attr.rs:14:7
    |
-13 | #[derive(Clap, Debug)]
-   |          ^^^^
-   |
-   = help: message: unexpected end of input, expected parentheses,
+14 |     #[clap]
+   |       ^^^^

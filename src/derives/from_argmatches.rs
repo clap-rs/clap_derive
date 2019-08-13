@@ -19,6 +19,7 @@ use syn::punctuated;
 use syn::token;
 
 use derives::{self, Attrs, Kind, Parser, Ty, DEFAULT_CASING};
+use derives::spanned::Sp;
 
 pub fn derive_from_argmatches(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     use syn::Data::*;
@@ -33,7 +34,7 @@ pub fn derive_from_argmatches(input: &syn::DeriveInput) -> proc_macro2::TokenStr
                 .ok()
                 .unwrap_or_else(String::default);
 
-            let attrs = Attrs::from_struct(&input.attrs, name, DEFAULT_CASING);
+            let attrs = Attrs::from_struct(&input.attrs, Sp::call_site(name), Sp::call_site(DEFAULT_CASING));
             gen_from_argmatches_impl_for_struct(struct_name, &fields.named, &attrs)
         },
         // Enum(ref e) => clap_for_enum_impl(struct_name, &e.variants, &input.attrs),
@@ -87,13 +88,14 @@ pub fn gen_constructor(
     let fields = fields.iter().map(|field| {
         let attrs = Attrs::from_field(field, parent_attribute.casing());
         let field_name = field.ident.as_ref().unwrap();
-        match attrs.kind() {
+        let kind = attrs.kind();
+        match &*attrs.kind() {
             Kind::Subcommand(ty) => {
-                let subcmd_type = match (ty, derives::sub_type(&field.ty)) {
+                let subcmd_type = match (**ty, derives::sub_type(&field.ty)) {
                     (Ty::Option, Some(sub_type)) => sub_type,
                     _ => &field.ty,
                 };
-                let unwrapper = match ty {
+                let unwrapper = match **ty {
                     Ty::Option => quote!(),
                     _ => quote!( .unwrap() ),
                 };
@@ -102,28 +104,29 @@ pub fn gen_constructor(
             Kind::FlattenStruct => {
                 quote!(#field_name: ::clap::FromArgMatches::from_argmatches(matches))
             }
-            Kind::Skip => quote!(#field_name: Default::default()),
+            Kind::Skip => quote_spanned!(kind.span() => #field_name: Default::default()),
             Kind::Arg(ty) => {
                 use self::Parser::*;
-                let (value_of, values_of, parse) = match *attrs.parser() {
-                    (FromStr, ref f) => (quote!(value_of), quote!(values_of), f.clone()),
-                    (TryFromStr, ref f) => (
+                let (parser, f) = attrs.parser();
+                let (value_of, values_of, parse) = match **parser {
+                    FromStr => (quote!(value_of), quote!(values_of), f.clone()),
+                    TryFromStr => (
                         quote!(value_of),
                         quote!(values_of),
                         quote!(|s| #f(s).unwrap()),
                     ),
-                    (FromOsStr, ref f) => (quote!(value_of_os), quote!(values_of_os), f.clone()),
-                    (TryFromOsStr, ref f) => (
+                    FromOsStr => (quote!(value_of_os), quote!(values_of_os), f.clone()),
+                    TryFromOsStr => (
                         quote!(value_of_os),
                         quote!(values_of_os),
                         quote!(|s| #f(s).unwrap()),
                     ),
-                    (FromOccurrences, ref f) => (quote!(occurrences_of), quote!(), f.clone()),
+                    FromOccurrences => (quote!(occurrences_of), quote!(), f.clone()),
                 };
 
-                let occurrences = attrs.parser().0 == Parser::FromOccurrences;
+                let occurrences = *attrs.parser().0 == Parser::FromOccurrences;
                 let name = attrs.cased_name();
-                let field_value = match ty {
+                let field_value = match **ty {
                     Ty::Bool => quote!(matches.is_present(#name)),
                     Ty::Option => quote! {
                         matches.#value_of(#name)

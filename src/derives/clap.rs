@@ -15,6 +15,8 @@ use proc_macro2;
 use syn;
 use syn::punctuated;
 use syn::token;
+use syn::spanned::Spanned as _;
+use proc_macro_error::{span_error, call_site_error};
 
 use derives;
 use derives::attrs::{Attrs, Kind, Parser, Ty};
@@ -28,16 +30,16 @@ fn gen_app_augmentation(
     app_var: &syn::Ident,
     parent_attribute: &Attrs,
 ) -> proc_macro2::TokenStream {
-    let subcmds: Vec<_> = fields
+    let mut subcmds = fields
         .iter()
         .filter_map(|field| {
             let attrs = Attrs::from_field(&field, parent_attribute.casing());
-            if let Kind::Subcommand(ty) = attrs.kind() {
-                let subcmd_type = match (ty, derives::sub_type(&field.ty)) {
+            if let Kind::Subcommand(ty) = &*attrs.kind() {
+                let subcmd_type = match (**ty, derives::sub_type(&field.ty)) {
                     (Ty::Option, Some(sub_type)) => sub_type,
                     _ => &field.ty,
                 };
-                let required = if ty == Ty::Option {
+                let required = if **ty == Ty::Option {
                     quote!()
                 } else {
                     quote! {
@@ -47,24 +49,28 @@ fn gen_app_augmentation(
                     }
                 };
 
-                Some(quote! {
+                let span = field.span();
+                let ts = quote! {
                     let #app_var = <#subcmd_type>::augment_app( #app_var );
                     #required
-                })
+                };
+                Some((span, ts))
             } else {
                 None
             }
-        })
-        .collect();
+        });
 
-    assert!(
-        subcmds.len() <= 1,
-        "cannot have more than one nested subcommand"
-    );
+    let subcmd = subcmds.next().map(|(_, ts)| ts);
+    if let Some((span, _)) = subcmds.next() {
+        span_error!(
+            span,
+            "nested subcommands are not allowed, that's the second"
+        );
+    }
 
     let args = fields.iter().filter_map(|field| {
         let attrs = Attrs::from_field(field, parent_attribute.casing());
-        match attrs.kind() {
+        match &*attrs.kind() {
             Kind::Subcommand(_) | Kind::Skip => None,
             Kind::FlattenStruct => {
                 let ty = &field.ty;
@@ -78,30 +84,31 @@ fn gen_app_augmentation(
                 })
             }
             Kind::Arg(ty) => {
-                let convert_type = match ty {
+                let convert_type = match **ty {
                     Ty::Vec | Ty::Option => derives::sub_type(&field.ty).unwrap_or(&field.ty),
                     Ty::OptionOption | Ty::OptionVec => derives::sub_type(&field.ty).and_then(derives::sub_type).unwrap_or(&field.ty),
                     _ => &field.ty,
                 };
 
-                let occurrences = attrs.parser().0 == Parser::FromOccurrences;
+                let occurrences = *attrs.parser().0 == Parser::FromOccurrences;
 
-                let validator = match *attrs.parser() {
-                    (Parser::TryFromStr, ref f) => quote! {
+                let (parser, f) = attrs.parser();
+                let validator = match **parser {
+                    Parser::TryFromStr => quote! {
                         .validator(|s| {
                             #f(&s)
                             .map(|_: #convert_type| ())
                             .map_err(|e| e.to_string())
                         })
                     },
-                    (Parser::TryFromOsStr, ref f) => quote! {
+                    Parser::TryFromOsStr => quote! {
                         .validator_os(|s| #f(&s).map(|_: #convert_type| ()))
                     },
                     _ => quote!(),
                 };
 
                 // @TODO remove unneccessary builders
-                let modifier = match ty {
+                let modifier = match **ty {
                     Ty::Bool => quote!(),
                     Ty::Option => quote!( .takes_value(true) #validator ),
                     Ty::OptionOption => {
@@ -132,7 +139,7 @@ fn gen_app_augmentation(
 
     quote! {{
         #( #args )*
-        #( #subcmds )*
+        #subcmd
         #app_var
     }}
 }
@@ -159,8 +166,11 @@ fn gen_augment_app_for_enum(
     use syn::Fields::*;
 
     let subcommands = variants.iter().map(|variant| {
-        let name = variant.ident.to_string();
-        let attrs = Attrs::from_struct(&variant.attrs, name, parent_attribute.casing());
+        let attrs = Attrs::from_struct(
+            &variant.attrs,
+            variant.ident.clone().into(),
+            parent_attribute.casing(),
+        );
         let app_var = syn::Ident::new("subcommand", proc_macro2::Span::call_site());
         let arg_block = match variant.fields {
             Named(ref fields) => gen_app_augmentation(&fields.named, &app_var, &attrs),
@@ -180,7 +190,7 @@ fn gen_augment_app_for_enum(
                     }
                 }
             }
-            Unnamed(..) => panic!("{}: tuple enums are not supported", variant.ident),
+            Unnamed(..) => call_site_error!("{}: tuple enums are not supported", variant.ident),
         };
 
         let name = attrs.cased_name();
@@ -211,7 +221,11 @@ fn gen_from_subcommand(
     use syn::Fields::*;
 
     let match_arms = variants.iter().map(|variant| {
-        let attrs = Attrs::from_struct(&variant.attrs, variant.ident.to_string(), parent_attribute.casing());
+        let attrs = Attrs::from_struct(
+            &variant.attrs,
+            variant.ident.clone().into(),
+            parent_attribute.casing()
+        );
         let sub_name = attrs.cased_name();
         let variant_name = &variant.ident;
         let constructor_block = match variant.fields {
@@ -221,7 +235,7 @@ fn gen_from_subcommand(
                 let ty = &fields.unnamed[0];
                 quote!( ( <#ty as ::clap::FromArgMatches>::from_argmatches(matches) ) )
             }
-            Unnamed(..) => panic!("{}: tuple enums are not supported", variant.ident),
+            Unnamed(..) => call_site_error!("{}: tuple enums are not supported", variant.ident),
         };
 
         quote! {
@@ -311,16 +325,14 @@ pub fn derive_clap(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     use syn::Data::*;
 
     let struct_name = &input.ident;
-    let inner_impl = match input.data {
+    match input.data {
         Struct(syn::DataStruct {
             fields: syn::Fields::Named(ref fields),
             ..
         }) => clap_impl_for_struct(struct_name, &fields.named, &input.attrs),
         Enum(ref e) => clap_impl_for_enum(struct_name, &e.variants, &input.attrs),
-        _ => panic!("clap_derive only supports non-tuple structs and enums"),
-    };
-
-    quote!(#inner_impl)
+        _ => call_site_error!("clap_derive only supports non-tuple structs and enums"),
+    }
 }
 
 fn gen_parse_fns(name: &syn::Ident) -> proc_macro2::TokenStream {

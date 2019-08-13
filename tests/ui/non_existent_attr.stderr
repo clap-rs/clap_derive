@@ -1,5 +1,7 @@
-error[E0599]: no method named `non_existing_attribute` found for type `clap::Arg<'_>` in the current scope
-  --> $DIR/non_existent_attr.rs:13:10
+error[E0599]: no method named `non_existing_attribute` found for type `clap::build::arg::Arg<'_>` in the current scope
+  --> $DIR/non_existent_attr.rs:14:19
    |
-13 | #[derive(Clap, Debug)]
-   |          ^^^^
+14 |     #[clap(short, non_existing_attribute = 1)]
+   |                   ^^^^^^^^^^^^^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0599`.
