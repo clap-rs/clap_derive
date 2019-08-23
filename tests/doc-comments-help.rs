@@ -70,7 +70,7 @@ fn empty_line_in_doc_comment_is_double_linefeed() {
     ///
     /// Bar
     #[derive(Clap, PartialEq, Debug)]
-    #[clap(name = "lorem-ipsum", author = "", version = "")]
+    #[clap(name = "lorem-ipsum", no_version)]
     struct LoremIpsum {}
 
     let mut output = Vec::new();

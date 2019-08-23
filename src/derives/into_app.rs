@@ -81,7 +81,8 @@ pub fn gen_app_builder(attrs: &[syn::Attribute]) -> GenOutput {
     let attrs = Attrs::from_struct(attrs, Sp::call_site(name), Sp::call_site(DEFAULT_CASING));
     let tokens = {
         let name = attrs.cased_name();
-        let methods = attrs.methods();
+        let methods = attrs.top_level_methods();
+
         quote!(::clap::App::new(#name)#methods)
     };
 

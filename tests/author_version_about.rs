@@ -22,7 +22,7 @@ fn no_author_version_about() {
     use clap::IntoApp;
 
     #[derive(Clap, PartialEq, Debug)]
-    #[clap(name = "foo", author = "", version = "")]
+    #[clap(name = "foo", no_version)]
     struct Opt {}
 
     let mut output = Vec::new();
@@ -34,6 +34,7 @@ fn no_author_version_about() {
 
 static ENV_HELP: &str = "clap-derive 0.3.0
 Guillaume Pinot <texitoi@texitoi.eu>, Kevin K. <kbknapp@gmail.com>, hoverbear <andrew@hoverbear.org>
+Parse command line argument by defining a struct, derive crate.
 
 USAGE:
     clap-derive
@@ -52,7 +53,7 @@ fn use_env() {
     use clap::IntoApp;
 
     #[derive(Clap, PartialEq, Debug)]
-    #[clap()]
+    #[clap(author, about)]
     struct Opt {}
 
     let mut output = Vec::new();

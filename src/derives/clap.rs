@@ -124,8 +124,10 @@ fn gen_app_augmentation(
                         quote!( .takes_value(true).required(#required) #validator )
                     }
                 };
-                let methods = attrs.methods();
+
                 let name = attrs.cased_name();
+                let methods = attrs.field_methods();
+
                 Some(quote! {
                     let #app_var = #app_var.arg(
                         ::clap::Arg::with_name(#name)
@@ -194,7 +196,8 @@ fn gen_augment_app_for_enum(
         };
 
         let name = attrs.cased_name();
-        let from_attrs = attrs.methods();
+        let from_attrs = attrs.top_level_methods();
+
         quote! {
             .subcommand({
                 let #app_var = ::clap::App::new(#name);

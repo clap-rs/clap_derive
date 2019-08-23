@@ -6,9 +6,7 @@ use clap::{AppSettings, Clap};
 #[derive(Clap, Debug)]
 #[clap(
     name = "no_version",
-    about = "",
-    version = "",
-    author = "",
+    no_version,
     global_setting = AppSettings::DisableVersion
 )]
 struct Opt {}
