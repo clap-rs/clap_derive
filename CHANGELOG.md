@@ -1,5 +1,13 @@
 # master
 
+* Change `version`, `author` and `about` attributes behavior. `version/author/about = ""` is no longer a
+  valid syntax. `author` and `about` are no longer derived from `Cargo.toml` by default, i.e when no
+  attributes mentioned. `version` is still to be derived from `Cargo.toml` by default.
+  Introduced explicit `author` and `about` attributes (with no arguments, i.e `#[structopt(author)]`)
+  for explicit requests to deduce author/about fields from `Cargo.toml`.
+  `version/author/about = "version/author/about"` is still valid syntax.
+  Introduced `no_version` attribute (no args) which prevents version auto deducing by default.
+  Proposed by [@TeXitoi](https://github.com/TeXitoi) [(#217)](https://github.com/TeXitoi/structopt/issues/217), implemented by [@CreepySkeleton](https://github.com/CreepySkeleton) [(#229)](https://github.com/TeXitoi/structopt/pull/229).
 * Support skipping struct fields by [@sphynx](https://github.com/sphynx)
  ([#174](https://github.com/TeXitoi/structopt/issues/174))
 * Support optional vectors of arguments for distinguishing between `-o 1 2`, `-o` and no option provided at all
@@ -11,7 +19,8 @@
 * Fix [#168](https://github.com/TeXitoi/structopt/issues/168) by [@TeXitoi](https://github.com/TeXitoi)
 * Introduce smarter parsing of doc comments by [@0ndorio](https://github.com/0ndorio)
 * Automatic naming of fields and subcommands by [@0ndorio](https://github.com/0ndorio). Default case is 'Kebab'
-
+* Significantly improve error reporting by [@CreepySkeleton](https://github.com/CreepySkeleton)
+  ([#225](https://github.com/TeXitoi/structopt/pull/225/))
 * Upgrade syn to 0.15 by [@konstin](https://github.com/konstin)
 
 # v0.2.10 (2018-06-07)
