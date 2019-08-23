@@ -1,0 +1,5 @@
+error: `#[clap(raw(...))` attributes are deprecated, only `raw(true)` and `raw(false)` are allowed
+  --> $DIR/raw.rs:13:12
+   |
+13 |     #[clap(raw(case_insensitive = "true"))]
+   |            ^^^
