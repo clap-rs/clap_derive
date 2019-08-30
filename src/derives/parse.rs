@@ -193,7 +193,7 @@ pub fn parse_clap_attributes(all_attrs: &[Attribute]) -> Vec<ClapAttr> {
         .iter()
         .filter(|attr| attr.path.is_ident("clap"))
         .flat_map(|attr| {
-            let attrs: ClapAttributes = parse2(attr.tts.clone())
+            let attrs: ClapAttributes = parse2(attr.tokens.clone())
                 .map_err(|e| match &*e.to_string() {
                     // this error message is misleading and points to Span::call_site()
                     // so we patch it with something meaningful

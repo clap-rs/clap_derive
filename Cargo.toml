@@ -22,16 +22,17 @@ travis-ci = { repository = "clap-rs/clap_derive" }
 appveyor = { repository = "https://github.com/clap-rs/clap_derive", service = "github" }
 
 [dependencies]
-syn = { version = "0.15.39", features = ["full"] }
-quote = "0.6"
-proc-macro2 = "0.4"
-heck = "^0.3.0"
+syn = { version = "1", features = ["full"] }
+quote = "1"
+proc-macro2 = "1"
+heck = "0.3.0"
 clippy = {version = "0.0.174", optional = true }
-proc-macro-error = "0.1"
+proc-macro-error = "0.2"
 
 [dev-dependencies]
 clap = { git = "https://github.com/clap-rs/clap", branch = "master"} # ONLY FOR INITIAL DEVELOPMENT...change to real crates.io ver for rlease!
 trybuild = "1.0.5"
+version_check = "0.9"
 
 [features]
 default = []
