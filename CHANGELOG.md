@@ -1,21 +1,146 @@
 # master
 
-* Change `version`, `author` and `about` attributes behavior. `version/author/about = ""` is no longer a
-  valid syntax. `author` and `about` are no longer derived from `Cargo.toml` by default, i.e when no
-  attributes mentioned. `version` is still to be derived from `Cargo.toml` by default.
-  Introduced explicit `author` and `about` attributes (with no arguments, i.e `#[structopt(author)]`)
-  for explicit requests to deduce author/about fields from `Cargo.toml`.
-  `version/author/about = "version/author/about"` is still valid syntax.
-  Introduced `no_version` attribute (no args) which prevents version auto deducing by default.
-  Proposed by [@TeXitoi](https://github.com/TeXitoi) [(#217)](https://github.com/TeXitoi/structopt/issues/217), implemented by [@CreepySkeleton](https://github.com/CreepySkeleton) [(#229)](https://github.com/TeXitoi/structopt/pull/229).
-* Support skipping struct fields by [@sphynx](https://github.com/sphynx)
- ([#174](https://github.com/TeXitoi/structopt/issues/174))
-* Support optional vectors of arguments for distinguishing between `-o 1 2`, `-o` and no option provided at all
-  by [@sphynx](https://github.com/sphynx)
-  ([#180](https://github.com/TeXitoi/structopt/issues/188))
-* Support optional options with optional argument, allowing `cmd [--opt[=value]]`
-  by [@sphynx](https://github.com/sphynx)
-  ([#188](https://github.com/TeXitoi/structopt/issues/188))
+### Support optional vectors of arguments for distinguishing between `-o 1 2`, `-o` and no option provided at all by [@sphynx](https://github.com/sphynx) ([#180](https://github.com/TeXitoi/structopt/issues/188)).
+
+```rust
+#[derive(Clap)]
+struct Opt {
+  #[clap(long)]
+  fruit: Option<Vec<String>>,
+}
+
+fn main() {
+  assert_eq!(Opt::from_args(&["test"]), None);
+  assert_eq!(Opt::from_args(&["test", "--fruit"]), Some(vec![]));
+  assert_eq!(Opt::from_args(&["test", "--fruit=apple orange"]), Some(vec!["apple", "orange"]));
+}
+```
+
+If you need to fall back to the old behavior you can use a type alias:
+```rust
+type Something = Vec<String>;
+
+#[derive(Clap)]
+struct Opt {
+  #[clap(long)]
+  fruit: Option<Vec<String>>,
+}
+```
+
+### Change default case from 'Verbatim' into 'Kebab' by [@0ndorio](https://github.com/0ndorio) ([#202](https://github.com/TeXitoi/structopt/issues/202)).
+Now uses field renaming to deduce a name for long options and subcommands.
+
+```rust
+#[derive(Clap)]
+struct Opt {
+  #[clap(long)]
+  http_addr: String, // will be renamed to `--http-addr`
+
+  #[clap(subcommand)]
+  addr_type: AddrType // this adds `addr-type` subcommand
+}
+```
+
+Older code used to leave things "as is", not renaming anything. If you want to keep old
+behavior add `#[clap(rename_all = "verbatim")]` on top of a `struct`/`enum`.
+
+### Change `version`, `author` and `about` attributes behavior.
+Proposed by [@TeXitoi](https://github.com/TeXitoi) [(#217)](https://github.com/TeXitoi/structopt/issues/217), implemented by [@CreepySkeleton](https://github.com/CreepySkeleton) [(#229)](https://github.com/TeXitoi/structopt/pull/229).
+
+`clap` have been deducing `version`, `author`, and `about` properties from `Cargo.toml`
+for a long time (more accurately, from `CARGO_PKG_...` environment variables).
+But many users found this behavior somewhat confusing, and a hack was added to cancel out
+this behavior: `#[clap(author = "")]`.
+
+Now this has changed.
+* `author` and `about` are no longer deduced by default. You should use `#[clap(author, about)]`
+  to explicitly request `clap` to deduce them.
+* Contrary, `version` **is still deduced by default**. You can use `#[clap(no_version)]` to
+  cancel it out.
+* `#[clap(author = "", about = "", version = "")]` is no longer a valid syntax
+  and will trigger an error.
+* `#[clap(version = "version", author = "author", about = "about")]` syntax
+  stays unaffected by this changes.
+
+### Raw attributes are removed ([#198](https://github.com/TeXitoi/structopt/pull/198)) by [@sphynx](https://github.com/sphynx)
+Before you were able to use any method from `clap::App` and `clap::Arg` via
+raw attribute: `#[clap(raw(method_name = "arg"))]`. This syntax was kind of awkward.
+
+```rust
+#[derive(Clap, Debug)]
+#[clap(raw(
+    global_settings = "&[AppSettings::ColoredHelp, AppSettings::VersionlessSubcommands]"
+))]
+struct Opt {
+    #[clap(short = "l", long = "level", raw(aliases = r#"&["set-level", "lvl"]"#))]
+    level: Vec<String>,
+}
+```
+
+Raw attributes were removed. Now you can use any method from `App` and `Arg` *directly*:
+```rust
+#[derive(Clap)]
+#[clap(global_setting(AppSettings::ColoredHelp))]
+struct Opt {
+    #[clap(short = "l", long = "level", aliases(&["set-level", "lvl"]))]
+    level: Vec<String>,
+}
+```
+
+### Support skipping struct fields
+Proposed by [@Morganamilo](https://github.com/Morganamilo) in ([#174](https://github.com/TeXitoi/structopt/issues/174))
+implemented by [@sphynx](https://github.com/sphynx) in ([#213](https://github.com/TeXitoi/structopt/issues/213)).
+
+Sometimes you want to include some fields in your `Clap` `struct` that are not options
+and `clap` should know nothing about them. Now it's possible via the
+`#[clap(skip)]` attribute. The field in question will be assigned with `Default::default()`
+value.
+
+```rust
+#[derive(Clap)]
+struct Opt {
+    #[clap(short, long)]
+    speed: f32,
+
+    car: String,
+
+    // this field should not generate any arguments
+    #[clap(skip)]
+    meta: Vec<u64>
+}
+```
+
+### Significantly improve error reporting by [@CreepySkeleton](https://github.com/CreepySkeleton) ([#225](https://github.com/TeXitoi/structopt/pull/225/))
+Now (almost) every error message points to the location it originates from:
+
+```text
+error: default_value is meaningless for bool
+  --> $DIR/bool_default_value.rs:14:19
+   |
+14 |     #[clap(short, default_value = true)]
+   |                   ^^^^^^^^^^^^^
+```
+
+### Support optional options with optional argument, allowing `cmd [--opt[=value]]` by [@sphynx](https://github.com/sphynx) ([#188](https://github.com/TeXitoi/structopt/issues/188))
+Sometimes you want to represent an optional option that optionally takes an argument,
+i.e `[--opt[=value]]`. This is represented by `Option<Option<T>>`
+
+```rust
+#[derive(Clap)]
+struct Opt {
+  #[clap(long)]
+  fruit: Option<Option<String>>,
+}
+
+fn main() {
+  assert_eq!(Opt::parse_from(&["test"]), None);
+  assert_eq!(Opt::parse_from(&["test", "--fruit"]), Some(None));
+  assert_eq!(Opt::parse_from(&["test", "--fruit=apple"]), Some("apple"));
+}
+```
+
+### Others
+
 * Fix [#168](https://github.com/TeXitoi/structopt/issues/168) by [@TeXitoi](https://github.com/TeXitoi)
 * Introduce smarter parsing of doc comments by [@0ndorio](https://github.com/0ndorio)
 * Automatic naming of fields and subcommands by [@0ndorio](https://github.com/0ndorio). Default case is 'Kebab'
