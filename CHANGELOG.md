@@ -1,5 +1,9 @@
 # master
 
+### Bump minimum rustc version to 1.36 by [@TeXitoi](https://github.com/TeXitoi)
+Now `rustc` 1.36 is the minimum compiler version supported by `clap_derive`,
+it likely won't work with older compilers.
+
 ### Support optional vectors of arguments for distinguishing between `-o 1 2`, `-o` and no option provided at all by [@sphynx](https://github.com/sphynx) ([#180](https://github.com/TeXitoi/structopt/issues/188)).
 
 ```rust
