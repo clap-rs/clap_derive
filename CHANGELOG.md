@@ -1,5 +1,9 @@
 # master
 
+### Others
+
+* Fix "`skip` plus long doc comment" bug ([#245](https://github.com/TeXitoi/structopt/issues/245))
+
 ### Bump minimum rustc version to 1.36 by [@TeXitoi](https://github.com/TeXitoi)
 Now `rustc` 1.36 is the minimum compiler version supported by `clap_derive`,
 it likely won't work with older compilers.
