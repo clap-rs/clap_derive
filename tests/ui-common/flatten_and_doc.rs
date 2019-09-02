@@ -24,4 +24,7 @@ struct Opt {
     opts: DaemonOpts,
 }
 
-fn main() {}
+fn main() {
+    let opt = Opt::parse();
+    println!("{:?}", opt);
+}

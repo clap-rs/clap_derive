@@ -3,6 +3,8 @@
 ### Others
 
 * Fix "`skip` plus long doc comment" bug ([#245](https://github.com/TeXitoi/structopt/issues/245))
+* Now `structopt` emits dummy `StructOpt` implementation along with an error. It suppresses
+  meaningless errors like `from_args method is not found for Opt`
 
 ### Bump minimum rustc version to 1.36 by [@TeXitoi](https://github.com/TeXitoi)
 Now `rustc` 1.36 is the minimum compiler version supported by `clap_derive`,

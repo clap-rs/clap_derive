@@ -15,4 +15,7 @@ struct Opt {
     n: Option<u32>,
 }
 
-fn main() {}
+fn main() {
+    let opt = Opt::parse();
+    println!("{:?}", opt);
+}

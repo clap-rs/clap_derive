@@ -14,4 +14,7 @@ struct Opt {
     s: String,
 }
 
-fn main() {}
+fn main() {
+    let opt = Opt::parse();
+    println!("{:?}", opt);
+}

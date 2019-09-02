@@ -15,5 +15,8 @@ struct Opt {
     debug: bool,
 }
 
-fn main() {}
+fn main() {
+    let opt = Opt::parse();
+    println!("{:?}", opt);
+}
 

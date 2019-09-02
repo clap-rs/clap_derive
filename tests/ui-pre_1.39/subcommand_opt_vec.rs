@@ -8,7 +8,7 @@
 
 use clap::Clap;
 
-#[derive(Clap)]
+#[derive(Clap, Debug)]
 #[clap(name = "make-cookie")]
 struct MakeCookie {
     #[clap(short)]
@@ -18,7 +18,7 @@ struct MakeCookie {
     cmd: Option<Vec<Command>>,
 }
 
-#[derive(Clap)]
+#[derive(Clap, Debug)]
 enum Command {
     #[clap(name = "pound")]
     /// Pound acorns into flour for cookie dough.
@@ -30,4 +30,7 @@ enum Command {
     },
 }
 
-fn main() {}
+fn main() {
+    let opt = MakeCookie::parse();
+    println!("{:?}", opt);
+}

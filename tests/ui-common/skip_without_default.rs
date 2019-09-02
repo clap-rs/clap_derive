@@ -16,11 +16,14 @@ enum Kind {
 
 #[derive(Clap, Debug)]
 #[clap(name = "test")]
-pub struct Opts {
+pub struct Opt {
     #[clap(short)]
     number: u32,
     #[clap(skip)]
     k: Kind,
 }
 
-fn main() {}
+fn main() {
+    let opt = Opt::parse();
+    println!("{:?}", opt);
+}

@@ -16,7 +16,7 @@ use syn;
 use syn::punctuated;
 use syn::token;
 use syn::spanned::Spanned as _;
-use proc_macro_error::{span_error, call_site_error};
+use proc_macro_error::{span_error, call_site_error, set_dummy};
 
 use derives;
 use derives::attrs::{Attrs, Kind, Parser, Ty};
@@ -328,6 +328,29 @@ pub fn derive_clap(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     use syn::Data::*;
 
     let struct_name = &input.ident;
+
+    set_dummy(Some(quote! {
+        impl ::clap::Clap for #struct_name {}
+
+        impl ::clap::IntoApp for #struct_name {
+            fn into_app<'b>() -> ::clap::App<'b> {
+                unimplemented!()
+            }
+        }
+
+        impl ::clap::FromArgMatches for #struct_name {
+            fn from_argmatches(m: &::clap::ArgMatches) -> Self {
+                unimplemented!()
+            }
+        }
+
+        impl #struct_name {
+            fn parse() -> Self {
+                unimplemented!();
+            }
+        }
+    }));
+
     match input.data {
         Struct(syn::DataStruct {
             fields: syn::Fields::Named(ref fields),
