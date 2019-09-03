@@ -33,7 +33,7 @@ type Something = Vec<String>;
 #[derive(Clap)]
 struct Opt {
   #[clap(long)]
-  fruit: Option<Vec<String>>,
+  fruit: Option<Something>,
 }
 ```
 
