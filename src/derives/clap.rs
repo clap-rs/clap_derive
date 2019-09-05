@@ -64,7 +64,7 @@ fn gen_app_augmentation(
     if let Some((span, _)) = subcmds.next() {
         span_error!(
             span,
-            "nested subcommands are not allowed, that's the second"
+            "multiple subcommand sets are not allowed, that's the second"
         );
     }
 
