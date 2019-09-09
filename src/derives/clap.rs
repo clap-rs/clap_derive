@@ -19,7 +19,7 @@ use syn::spanned::Spanned as _;
 use proc_macro_error::{span_error, call_site_error, set_dummy};
 
 use derives;
-use derives::attrs::{Attrs, Kind, Parser, Ty};
+use derives::attrs::{Attrs, Kind, ParserKind, Ty};
 use derives::from_argmatches;
 use derives::into_app;
 
@@ -34,7 +34,8 @@ fn gen_app_augmentation(
         .iter()
         .filter_map(|field| {
             let attrs = Attrs::from_field(&field, parent_attribute.casing());
-            if let Kind::Subcommand(ty) = &*attrs.kind() {
+            let kind = attrs.kind();
+            if let Kind::Subcommand(ty) = &*kind {
                 let subcmd_type = match (**ty, derives::sub_type(&field.ty)) {
                     (Ty::Option, Some(sub_type)) => sub_type,
                     _ => &field.ty,
@@ -42,7 +43,7 @@ fn gen_app_augmentation(
                 let required = if **ty == Ty::Option {
                     quote!()
                 } else {
-                    quote! {
+                    quote_spanned! { kind.span()=>
                         let #app_var = #app_var.setting(
                             ::clap::AppSettings::SubcommandRequiredElseHelp
                         );
@@ -70,11 +71,12 @@ fn gen_app_augmentation(
 
     let args = fields.iter().filter_map(|field| {
         let attrs = Attrs::from_field(field, parent_attribute.casing());
-        match &*attrs.kind() {
+        let kind = attrs.kind();
+        match &*kind {
             Kind::Subcommand(_) | Kind::Skip => None,
             Kind::FlattenStruct => {
                 let ty = &field.ty;
-                Some(quote! {
+                Some(quote_spanned! { kind.span()=>
                     let #app_var = <#ty>::augment_app(#app_var);
                     let #app_var = if <#ty>::is_subcommand() {
                         #app_var.setting(::clap::AppSettings::SubcommandRequiredElseHelp)
@@ -86,49 +88,77 @@ fn gen_app_augmentation(
             Kind::Arg(ty) => {
                 let convert_type = match **ty {
                     Ty::Vec | Ty::Option => derives::sub_type(&field.ty).unwrap_or(&field.ty),
-                    Ty::OptionOption | Ty::OptionVec => derives::sub_type(&field.ty).and_then(derives::sub_type).unwrap_or(&field.ty),
+                    Ty::OptionOption | Ty::OptionVec => {
+                        derives::sub_type(&field.ty).and_then(derives::sub_type).unwrap_or(&field.ty)
+                    }
                     _ => &field.ty,
                 };
 
-                let occurrences = *attrs.parser().0 == Parser::FromOccurrences;
+                let occurrences = *attrs.parser().kind == ParserKind::FromOccurrences;
 
-                let (parser, f) = attrs.parser();
-                let validator = match **parser {
-                    Parser::TryFromStr => quote! {
+                let parser = attrs.parser();
+                let func = &parser.func;
+                let validator = match *parser.kind {
+                    ParserKind::TryFromStr => quote_spanned! { func.span()=>
                         .validator(|s| {
-                            #f(&s)
+                            #func(&s)
                             .map(|_: #convert_type| ())
                             .map_err(|e| e.to_string())
                         })
                     },
-                    Parser::TryFromOsStr => quote! {
-                        .validator_os(|s| #f(&s).map(|_: #convert_type| ()))
+                    ParserKind::TryFromOsStr => quote_spanned! { func.span()=>
+                        .validator_os(|s| #func(&s).map(|_: #convert_type| ()))
                     },
                     _ => quote!(),
                 };
 
-                // @TODO remove unneccessary builders
                 let modifier = match **ty {
                     Ty::Bool => quote!(),
-                    Ty::Option => quote!( .takes_value(true) #validator ),
-                    Ty::OptionOption => {
-                        quote! ( .takes_value(true).multiple(false).min_values(0).max_values(1) #validator )
-                    }
-                    Ty::OptionVec => {
-                        quote! ( .takes_value(true).multiple(true).min_values(0) #validator )
-                    }
-                    Ty::Vec => quote!( .takes_value(true).multiple(true) #validator ),
-                    Ty::Other if occurrences => quote!( .multiple_occurrences(true) ),
+
+                    Ty::Option => quote_spanned! { ty.span()=>
+                        .takes_value(true)
+                        #validator
+                    },
+
+                    Ty::OptionOption => quote_spanned! { ty.span()=>
+                        .takes_value(true)
+                        .multiple(false)
+                        .min_values(0)
+                        .max_values(1)
+                        #validator
+                    },
+
+                    Ty::OptionVec => quote_spanned! { ty.span()=>
+                        .takes_value(true)
+                        .multiple(true)
+                        .min_values(0)
+                        #validator
+                    },
+
+                    Ty::Vec => quote_spanned! { ty.span()=>
+                        .takes_value(true)
+                        .multiple(true)
+                        #validator
+                    },
+
+                    Ty::Other if occurrences => quote_spanned! { ty.span()=>
+                        .multiple_occurrences(true)
+                    },
+
                     Ty::Other => {
                         let required = !attrs.has_method("default_value");
-                        quote!( .takes_value(true).required(#required) #validator )
+                        quote_spanned! { ty.span()=>
+                            .takes_value(true)
+                            .required(#required)
+                            #validator
+                        }
                     }
                 };
 
                 let name = attrs.cased_name();
                 let methods = attrs.field_methods();
 
-                Some(quote! {
+                Some(quote_spanned! { field.span()=>
                     let #app_var = #app_var.arg(
                         ::clap::Arg::with_name(#name)
                             #modifier
@@ -169,6 +199,7 @@ fn gen_augment_app_for_enum(
 
     let subcommands = variants.iter().map(|variant| {
         let attrs = Attrs::from_struct(
+            variant.span(),
             &variant.attrs,
             variant.ident.clone().into(),
             parent_attribute.casing(),
@@ -179,7 +210,7 @@ fn gen_augment_app_for_enum(
             Unit => quote!( #app_var ),
             Unnamed(syn::FieldsUnnamed { ref unnamed, .. }) if unnamed.len() == 1 => {
                 let ty = &unnamed[0];
-                quote! {
+                quote_spanned! { ty.span() =>
                     {
                         let #app_var = <#ty>::augment_app(#app_var);
                         if <#ty>::is_subcommand() {
@@ -225,6 +256,7 @@ fn gen_from_subcommand(
 
     let match_arms = variants.iter().map(|variant| {
         let attrs = Attrs::from_struct(
+            variant.span(),
             &variant.attrs,
             variant.ident.clone().into(),
             parent_attribute.casing()

@@ -78,7 +78,12 @@ pub fn gen_into_app_fn_for_struct(struct_attrs: &[syn::Attribute]) -> GenOutput 
 pub fn gen_app_builder(attrs: &[syn::Attribute]) -> GenOutput {
     let name = env::var("CARGO_PKG_NAME").ok().unwrap_or_default();
 
-    let attrs = Attrs::from_struct(attrs, Sp::call_site(name), Sp::call_site(DEFAULT_CASING));
+    let attrs = Attrs::from_struct(
+        proc_macro2::Span::call_site(),
+        attrs,
+        Sp::call_site(name),
+        Sp::call_site(DEFAULT_CASING)
+    );
     let tokens = {
         let name = attrs.cased_name();
         let methods = attrs.top_level_methods();

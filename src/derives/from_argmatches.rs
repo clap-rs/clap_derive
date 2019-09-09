@@ -17,8 +17,9 @@ use proc_macro2;
 use syn;
 use syn::punctuated;
 use syn::token;
+use syn::spanned::Spanned as _;
 
-use derives::{self, Attrs, Kind, Parser, Ty, DEFAULT_CASING};
+use derives::{self, Attrs, Kind, ParserKind, Ty, DEFAULT_CASING};
 use derives::spanned::Sp;
 
 pub fn derive_from_argmatches(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
@@ -34,7 +35,13 @@ pub fn derive_from_argmatches(input: &syn::DeriveInput) -> proc_macro2::TokenStr
                 .ok()
                 .unwrap_or_else(String::default);
 
-            let attrs = Attrs::from_struct(&input.attrs, Sp::call_site(name), Sp::call_site(DEFAULT_CASING));
+            let attrs = Attrs::from_struct(
+                proc_macro2::Span::call_site(),
+                &input.attrs,
+                Sp::call_site(name),
+                Sp::call_site(DEFAULT_CASING)
+            );
+
             gen_from_argmatches_impl_for_struct(struct_name, &fields.named, &attrs)
         },
         // Enum(ref e) => clap_for_enum_impl(struct_name, &e.variants, &input.attrs),
@@ -97,49 +104,74 @@ pub fn gen_constructor(
                 };
                 let unwrapper = match **ty {
                     Ty::Option => quote!(),
-                    _ => quote!( .unwrap() ),
+                    _ => quote_spanned!( ty.span()=> .unwrap() ),
                 };
-                quote!(#field_name: <#subcmd_type>::from_subcommand(matches.subcommand())#unwrapper)
+                quote_spanned! { kind.span()=>
+                    #field_name: <#subcmd_type>::from_subcommand(matches.subcommand())#unwrapper
+                }
             }
-            Kind::FlattenStruct => {
-                quote!(#field_name: ::clap::FromArgMatches::from_argmatches(matches))
-            }
-            Kind::Skip => quote_spanned!(kind.span() => #field_name: Default::default()),
+
+            Kind::FlattenStruct => quote_spanned! { kind.span()=>
+                #field_name: ::clap::FromArgMatches::from_argmatches(matches)
+            },
+
+            Kind::Skip => quote_spanned!(kind.span()=> #field_name: Default::default()),
+
             Kind::Arg(ty) => {
-                use self::Parser::*;
-                let (parser, f) = attrs.parser();
-                let (value_of, values_of, parse) = match **parser {
-                    FromStr => (quote!(value_of), quote!(values_of), f.clone()),
+                use self::ParserKind::*;
+
+                let parser = attrs.parser();
+                let func = &parser.func;
+                let span = parser.kind.span();
+                let (value_of, values_of, parse) = match *parser.kind {
+                    FromStr => (
+                        quote_spanned!(span=> value_of),
+                        quote_spanned!(span=> values_of),
+                        func.clone(),
+                    ),
                     TryFromStr => (
-                        quote!(value_of),
-                        quote!(values_of),
-                        quote!(|s| #f(s).unwrap()),
+                        quote_spanned!(span=> value_of),
+                        quote_spanned!(span=> values_of),
+                        quote_spanned!(func.span()=> |s| #func(s).unwrap()),
                     ),
-                    FromOsStr => (quote!(value_of_os), quote!(values_of_os), f.clone()),
+                    FromOsStr => (
+                        quote_spanned!(span=> value_of_os),
+                        quote_spanned!(span=> values_of_os),
+                        func.clone(),
+                    ),
                     TryFromOsStr => (
-                        quote!(value_of_os),
-                        quote!(values_of_os),
-                        quote!(|s| #f(s).unwrap()),
+                        quote_spanned!(span=> value_of_os),
+                        quote_spanned!(span=> values_of_os),
+                        quote_spanned!(func.span()=> |s| #func(s).unwrap()),
                     ),
-                    FromOccurrences => (quote!(occurrences_of), quote!(), f.clone()),
+                    FromOccurrences => (
+                        quote_spanned!(span=> occurrences_of),
+                        quote!(),
+                        func.clone()
+                    ),
                 };
 
-                let occurrences = *attrs.parser().0 == Parser::FromOccurrences;
+                let occurrences = *attrs.parser().kind == ParserKind::FromOccurrences;
                 let name = attrs.cased_name();
                 let field_value = match **ty {
-                    Ty::Bool => quote!(matches.is_present(#name)),
-                    Ty::Option => quote! {
+                    Ty::Bool => quote_spanned! { ty.span()=>
+                        matches.is_present(#name)
+                    },
+
+                    Ty::Option => quote_spanned! { ty.span()=>
                         matches.#value_of(#name)
                             .map(#parse)
                     },
-                    Ty::OptionOption => quote! {
+
+                    Ty::OptionOption => quote_spanned! { ty.span()=>
                         if matches.is_present(#name) {
                             Some(matches.#value_of(#name).map(#parse))
                         } else {
                             None
                         }
                     },
-                    Ty::OptionVec => quote! {
+
+                    Ty::OptionVec => quote_spanned! { ty.span()=>
                         if matches.is_present(#name) {
                             Some(matches.#values_of(#name)
                                  .map(|v| v.map(#parse).collect())
@@ -148,22 +180,25 @@ pub fn gen_constructor(
                             None
                         }
                     },
-                    Ty::Vec => quote! {
+
+                    Ty::Vec => quote_spanned! { ty.span()=>
                         matches.#values_of(#name)
                             .map(|v| v.map(#parse).collect())
                             .unwrap_or_else(Vec::new)
                     },
-                    Ty::Other if occurrences => quote! {
+
+                    Ty::Other if occurrences => quote_spanned! { ty.span()=>
                         #parse(matches.#value_of(#name))
                     },
-                    Ty::Other => quote! {
+
+                    Ty::Other => quote_spanned! { ty.span()=>
                         matches.#value_of(#name)
                             .map(#parse)
                             .unwrap()
                     },
                 };
 
-                quote!( #field_name: #field_value )
+                quote_spanned!(field.span()=> #field_name: #field_value )
             }
         }
     });

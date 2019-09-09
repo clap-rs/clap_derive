@@ -13,14 +13,16 @@
 // MIT/Apache 2.0 license.
 
 use heck::{CamelCase, KebabCase, MixedCase, ShoutySnakeCase, SnakeCase};
-use proc_macro2;
+use proc_macro2::{self, Span};
 use proc_macro_error::span_error;
 use std::env;
 use syn;
 use syn::spanned::Spanned as _;
+use quote::ToTokens;
 
 use derives;
 use derives::spanned::Sp;
+use derives::parse::{ParserSpec, parse_clap_attributes};
 
 /// Default casing style for generated arguments.
 pub const DEFAULT_CASING: CasingStyle = CasingStyle::Kebab;
@@ -49,8 +51,14 @@ pub struct Method {
     args: proc_macro2::TokenStream,
 }
 
+#[derive(Clone)]
+pub struct Parser {
+    pub kind: Sp<ParserKind>,
+    pub func: proc_macro2::TokenStream,
+}
+
 #[derive(Debug, PartialEq, Clone)]
-pub enum Parser {
+pub enum ParserKind {
     FromStr,
     TryFromStr,
     FromOsStr,
@@ -81,10 +89,10 @@ pub struct Attrs {
     cased_name: String,
     casing: Sp<CasingStyle>,
     methods: Vec<Method>,
-    parser: Sp<(Sp<Parser>, proc_macro2::TokenStream)>,
-    author: Option<(syn::Ident, syn::LitStr)>,
-    about: Option<(syn::Ident, syn::LitStr)>,
-    version: Option<(syn::Ident, syn::LitStr)>,
+    parser: Sp<Parser>,
+    author: Option<Method>,
+    about: Option<Method>,
+    version: Option<Method>,
     no_version: Option<syn::Ident>,
     has_custom_parser: bool,
     kind: Sp<Kind>,
@@ -100,19 +108,89 @@ pub struct GenOutput {
     pub attrs: Attrs,
 }
 
-impl Parser {
-    fn from_ident(ident: syn::Ident) -> Sp<Self> {
-        use self::Parser::*;
+impl Method {
+    fn new(name: syn::Ident, args: proc_macro2::TokenStream) -> Self {
+        Method { name, args }
+    }
 
-        let p = |kind| Sp::new(kind, ident.span());
-        match &*ident.to_string() {
-            "from_str" => p(FromStr),
-            "try_from_str" => p(TryFromStr),
-            "from_os_str" => p(FromOsStr),
-            "try_from_os_str" => p(TryFromOsStr),
-            "from_occurrences" => p(FromOccurrences),
-            s => span_error!(ident.span(), "unsupported parser `{}`", s),
+    fn from_lit_or_env(ident: syn::Ident, lit: Option<syn::LitStr>, env_var: &str) -> Option<Self> {
+        let mut lit = match lit {
+            Some(lit) => lit,
+
+            None => match env::var(env_var) {
+                Ok(val) => syn::LitStr::new(&val, ident.span()),
+                Err(_) => {
+                    span_error!(ident.span(),
+                        "`{}` environment variable is not defined, use `{} = \"{}\"` to set it manually", env_var, ident, ident
+                    );
+                }
+            },
+        };
+
+        if ident == "author" {
+            let edited = process_author_str(&lit.value());
+            lit = syn::LitStr::new(&edited, lit.span());
         }
+
+        Some(Method::new(ident, quote!(#lit)))
+    }
+}
+
+impl ToTokens for Method {
+    fn to_tokens(&self, ts: &mut proc_macro2::TokenStream) {
+        let Method { ref name, ref args } = self;
+
+        let tokens = if name == "short" {
+            quote!( .#name(#args.chars().nth(0).unwrap()) )
+        } else {
+            quote!( .#name(#args) )
+        };
+
+        tokens.to_tokens(ts);
+    }
+}
+
+impl Parser {
+    fn default_spanned(span: Span) -> Sp<Self> {
+        let kind = Sp::new(ParserKind::TryFromStr, span.clone());
+        let func = quote_spanned!(span=> ::std::str::FromStr::from_str);
+        Sp::new(Parser { kind, func }, span)
+    }
+
+    fn from_spec(parse_ident: syn::Ident, spec: ParserSpec) -> Sp<Self> {
+        use self::ParserKind::*;
+
+        let kind = match &*spec.kind.to_string() {
+            "from_str" => FromStr,
+            "try_from_str" => TryFromStr,
+            "from_os_str" => FromOsStr,
+            "try_from_os_str" => TryFromOsStr,
+            "from_occurrences" => FromOccurrences,
+            s => span_error!(spec.kind.span(), "unsupported parser `{}`", s),
+        };
+
+        let func = match spec.parse_func {
+            None => match kind {
+                FromStr | FromOsStr => {
+                    quote_spanned!(spec.kind.span()=> ::std::convert::From::from)
+                }
+                TryFromStr => quote_spanned!(spec.kind.span()=> ::std::str::FromStr::from_str),
+                TryFromOsStr => span_error!(
+                    spec.kind.span(),
+                    "cannot omit parser function name with `try_from_os_str`"
+                ),
+                FromOccurrences => quote_spanned!(spec.kind.span()=> { |v| v as _ }),
+            },
+
+            Some(func) => match func {
+                syn::Expr::Path(_) => quote!(#func),
+                _ => span_error!(func.span(), "`parse` argument must be a function path"),
+            },
+        };
+
+        let kind = Sp::new(kind, spec.kind.span());
+        let parser = Parser { kind, func };
+        Sp::new(parser, parse_ident.span())
     }
 }
 
@@ -149,7 +227,7 @@ impl CasingStyle {
 }
 
 impl Attrs {
-    fn new(name: Sp<String>, casing: Sp<CasingStyle>) -> Self {
+    fn new(default_span: Span, name: Sp<String>, casing: Sp<CasingStyle>) -> Self {
         let cased_name = casing.translate(&name);
 
         Self {
@@ -157,17 +235,14 @@ impl Attrs {
             cased_name,
             casing,
             methods: vec![],
-            parser: Sp::call_site((
-                Sp::call_site(Parser::TryFromStr),
-                quote!(::std::str::FromStr::from_str),
-            )),
+            parser: Parser::default_spanned(default_span.clone()),
             about: None,
             author: None,
             version: None,
             no_version: None,
 
             has_custom_parser: false,
-            kind: Sp::call_site(Kind::Arg(Sp::call_site(Ty::Other))),
+            kind: Sp::new(Kind::Arg(Sp::new(Ty::Other, default_span)), default_span),
         }
     }
 
@@ -178,32 +253,16 @@ impl Attrs {
                 self.cased_name = self.casing.translate(&arg);
                 self.name = arg;
             }
-            _ => self.methods.push(Method {
-                name: name.as_ident(),
-                args: quote!(#arg),
-            }),
+            _ => self
+                .methods
+                .push(Method::new(name.as_ident(), quote!(#arg))),
         }
     }
 
     fn push_attrs(&mut self, attrs: &[syn::Attribute]) {
         use derives::parse::ClapAttr::*;
 
-        fn from_lit_or_env(
-            ident: syn::Ident,
-            lit: Option<syn::LitStr>,
-            env_var: &str,
-        ) -> Option<(syn::Ident, syn::LitStr)> {
-            let lit = lit.unwrap_or_else(|| {
-                let gen = env::var(env_var)
-                    .unwrap_or_else(|_|
-                     span_error!(ident.span(), "`{}` environment variable is not defined, use `{} = \"{}\"` to set it manually", env_var, env_var, env_var));
-                syn::LitStr::new(&gen, proc_macro2::Span::call_site())
-            });
-
-            Some((ident, lit))
-        }
-
-        for attr in derives::parse::parse_clap_attributes(attrs) {
+        for attr in parse_clap_attributes(attrs) {
             match attr {
                 Short(ident) => {
                     let cased_name = Sp::call_site(self.cased_name.clone());
@@ -234,32 +293,26 @@ impl Attrs {
                 NoVersion(ident) => self.no_version = Some(ident),
 
                 About(ident, about) => {
-                    self.about = from_lit_or_env(ident, about, "CARGO_PKG_DESCRIPTION")
+                    self.about = Method::from_lit_or_env(ident, about, "CARGO_PKG_DESCRIPTION");
                 }
 
                 Author(ident, author) => {
-                    self.author =
-                        from_lit_or_env(ident, author, "CARGO_PKG_AUTHORS").map(|(ident, lit)| {
-                            let value = lit.value().replace(":", ", ");
-                            (ident.clone(), syn::LitStr::new(&value, ident.span()))
-                        })
+                    self.author = Method::from_lit_or_env(ident, author, "CARGO_PKG_AUTHORS");
                 }
 
-                Version(ident, version) => self.version = Some((ident, version)),
+                Version(ident, version) => {
+                    self.version = Some(Method::new(ident, quote!(#version)))
+                }
 
                 NameLitStr(name, lit) => {
                     self.push_str_method(name.into(), lit.into());
                 }
 
-                NameExpr(name, expr) => self.methods.push(Method {
-                    name: name.into(),
-                    args: quote!(#expr),
-                }),
+                NameExpr(name, expr) => self.methods.push(Method::new(name.into(), quote!(#expr))),
 
-                MethodCall(name, args) => self.methods.push(Method {
-                    name: name.into(),
-                    args: quote!(#(#args),*),
-                }),
+                MethodCall(name, args) => self
+                    .methods
+                    .push(Method::new(name.into(), quote!(#(#args),*))),
 
                 RenameAll(_, casing_lit) => {
                     self.casing = CasingStyle::from_lit(casing_lit);
@@ -268,37 +321,7 @@ impl Attrs {
 
                 Parse(ident, spec) => {
                     self.has_custom_parser = true;
-
-                    self.parser = match spec.parse_func {
-                        None => {
-                            use self::Parser::*;
-
-                            let parser: Sp<_> = Parser::from_ident(spec.kind).into();
-                            let function = match *parser {
-                                FromStr | FromOsStr => quote!(::std::convert::From::from),
-                                TryFromStr => quote!(::std::str::FromStr::from_str),
-                                TryFromOsStr => span_error!(
-                                    parser.span(),
-                                    "cannot omit parser function name with `try_from_os_str`"
-                                ),
-                                FromOccurrences => quote!({ |v| v as _ }),
-                            };
-                            Sp::new((parser, function), ident.span())
-                        }
-
-                        Some(func) => {
-                            let parser: Sp<_> = Parser::from_ident(spec.kind).into();
-                            match func {
-                                syn::Expr::Path(_) => {
-                                    Sp::new((parser, quote!(#func)), ident.span())
-                                }
-                                _ => span_error!(
-                                    func.span(),
-                                    "`parse` argument must be a function path"
-                                ),
-                            }
-                        }
-                    }
+                    self.parser = Parser::from_spec(ident, spec);
                 }
             }
         }
@@ -363,10 +386,8 @@ impl Attrs {
         if expected_doc_comment_split {
             let long_name = Sp::call_site(format!("long_{}", name));
 
-            self.methods.push(Method {
-                name: long_name.as_ident(),
-                args: quote!(#merged_lines),
-            });
+            self.methods
+                .push(Method::new(long_name.as_ident(), quote!(#merged_lines)));
 
             // Remove trailing whitespace and period from short help, as rustdoc
             // best practice is to use complete sentences, but command-line help
@@ -376,24 +397,25 @@ impl Attrs {
                 .map(|s| s.trim())
                 .map_or("", |s| s.trim_end_matches('.'));
 
-            self.methods.push(Method {
-                name: syn::Ident::new(name, proc_macro2::Span::call_site()),
-                args: quote!(#short_arg),
-            });
+            self.methods.push(Method::new(
+                syn::Ident::new(name, Span::call_site()),
+                quote!(#short_arg),
+            ));
         } else {
-            self.methods.push(Method {
-                name: syn::Ident::new(name, proc_macro2::Span::call_site()),
-                args: quote!(#merged_lines),
-            });
+            self.methods.push(Method::new(
+                syn::Ident::new(name, Span::call_site()),
+                quote!(#merged_lines),
+            ));
         }
     }
 
     pub fn from_struct(
+        span: Span,
         attrs: &[syn::Attribute],
         name: Sp<String>,
         argument_casing: Sp<CasingStyle>,
     ) -> Self {
-        let mut res = Self::new(name, argument_casing);
+        let mut res = Self::new(span, name, argument_casing);
         res.push_attrs(attrs);
         res.push_doc_comment(attrs, "about");
 
@@ -443,7 +465,7 @@ impl Attrs {
 
     pub fn from_field(field: &syn::Field, struct_casing: Sp<CasingStyle>) -> Self {
         let name = field.ident.clone().unwrap();
-        let mut res = Self::new(name.into(), struct_casing);
+        let mut res = Self::new(field.span(), name.into(), struct_casing);
         res.push_doc_comment(&field.attrs, "help");
         res.push_attrs(&field.attrs);
 
@@ -585,52 +607,25 @@ impl Attrs {
                 "`no_version` and `version = \"version\"` can't be used together"
             ),
 
-            (None, Some((_, version))) => quote!(.version(#version)),
+            (None, Some(m)) => m.to_token_stream(),
 
-            (None, None) => {
-                if let Ok(version) = std::env::var("CARGO_PKG_VERSION") {
-                    quote!(.version(#version))
-                } else {
-                    proc_macro2::TokenStream::new()
-                }
-            }
+            (None, None) => std::env::var("CARGO_PKG_VERSION")
+                .map(|version| quote!( .version(#version) ))
+                .unwrap_or_default(),
 
-            (Some(_), None) => proc_macro2::TokenStream::new(),
+            (Some(_), None) => quote!(),
         };
 
-        let version = Some(version);
-        let author = self
-            .author
-            .as_ref()
-            .map(|(_, version)| quote!(.author(#version)));
-        let about = self
-            .about
-            .as_ref()
-            .map(|(_, version)| quote!(.about(#version)));
+        let author = &self.author;
+        let about = &self.about;
+        let methods = &self.methods;
 
-        let methods = self
-            .methods
-            .iter()
-            .map(|&Method { ref name, ref args }| quote!( .#name(#args) ))
-            .chain(version)
-            .chain(author)
-            .chain(about);
-
-        quote!( #(#methods)* )
+        quote!( #(#methods)* #author #about #version )
     }
 
     /// generate methods on top of a field
     pub fn field_methods(&self) -> proc_macro2::TokenStream {
-        let methods = self
-            .methods
-            .iter()
-            .map(|&Method { ref name, ref args }| {
-                if name == "short" {
-                    quote!( .#name(#args.chars().nth(0).unwrap()) )
-                } else {
-                    quote!( .#name(#args) )
-                }
-            });
+        let methods = &self.methods;
 
         quote!( #(#methods)* )
     }
@@ -639,7 +634,7 @@ impl Attrs {
         self.cased_name.to_string()
     }
 
-    pub fn parser(&self) -> &(Sp<Parser>, proc_macro2::TokenStream) {
+    pub fn parser(&self) -> &Sp<Parser> {
         &self.parser
     }
 
@@ -650,4 +645,9 @@ impl Attrs {
     pub fn casing(&self) -> Sp<CasingStyle> {
         self.casing.clone()
     }
+}
+
+/// replace all `:` with `, `
+fn process_author_str(author: &str) -> String {
+    author.replace(":", ", ")
 }
