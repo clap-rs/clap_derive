@@ -1,9 +1,9 @@
 # master
-
 ### Others
 
 * `structopt` does not replace `:` with `, ` inside "author" strings while inside `<...>`.
   Fixes [#156](https://github.com/TeXitoi/structopt/issues/156)
+* Introduced [`#[structopt(skip = expr)]` syntax](https://docs.rs/structopt/0.3.2/structopt/#skipping-fields).
 * Fix "`skip` plus long doc comment" bug ([#245](https://github.com/TeXitoi/structopt/issues/245))
 * Now `structopt` emits dummy `StructOpt` implementation along with an error. It suppresses
   meaningless errors like `from_args method is not found for Opt`

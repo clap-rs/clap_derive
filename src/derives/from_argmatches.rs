@@ -115,7 +115,10 @@ pub fn gen_constructor(
                 #field_name: ::clap::FromArgMatches::from_argmatches(matches)
             },
 
-            Kind::Skip => quote_spanned!(kind.span()=> #field_name: Default::default()),
+            Kind::Skip(val) => match val {
+                None => quote_spanned!(kind.span()=> #field_name: Default::default()),
+                Some(val) => quote_spanned!(kind.span()=> #field_name: (#val).into()),
+            },
 
             Kind::Arg(ty) => {
                 use self::ParserKind::*;

@@ -73,7 +73,7 @@ fn gen_app_augmentation(
         let attrs = Attrs::from_field(field, parent_attribute.casing());
         let kind = attrs.kind();
         match &*kind {
-            Kind::Subcommand(_) | Kind::Skip => None,
+            Kind::Subcommand(_) | Kind::Skip(_) => None,
             Kind::FlattenStruct => {
                 let ty = &field.ty;
                 Some(quote_spanned! { kind.span()=>

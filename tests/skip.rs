@@ -76,7 +76,6 @@ fn skip_enum() {
     }
 
     #[derive(Clap, Debug, PartialEq)]
-    #[clap(name = "a")]
     pub struct Opt {
         #[clap(long, short)]
         number: u32,
@@ -99,7 +98,6 @@ fn skip_enum() {
 #[test]
 fn skip_help_doc_comments() {
     #[derive(Clap, Debug, PartialEq)]
-    #[clap(name = "a")]
     pub struct Opt {
         #[clap(skip, help = "internal_stuff")]
         a: u32,
@@ -124,6 +122,30 @@ fn skip_help_doc_comments() {
             a: 0,
             b: 0,
             c: 0,
+        }
+    );
+}
+
+#[test]
+fn skip_val() {
+    #[derive(Clap, Debug, PartialEq)]
+    pub struct Opt {
+        #[clap(long, short)]
+        number: u32,
+
+        #[clap(skip = "key")]
+        k: String,
+
+        #[clap(skip = vec![1, 2, 3])]
+        v: Vec<u32>,
+    }
+
+    assert_eq!(
+        Opt::parse_from(&["test", "-n", "10"]),
+        Opt {
+            number: 10,
+            k: "key".into(),
+            v: vec![1, 2, 3]
         }
     );
 }
