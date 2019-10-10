@@ -152,8 +152,10 @@ pub fn gen_constructor(
                         quote!(),
                         func.clone()
                     ),
+                    FromFlag => (quote!(), quote!(), func.clone()),
                 };
 
+                let flag = *attrs.parser().kind == ParserKind::FromFlag;
                 let occurrences = *attrs.parser().kind == ParserKind::FromOccurrences;
                 let name = attrs.cased_name();
                 let field_value = match **ty {
@@ -192,6 +194,10 @@ pub fn gen_constructor(
 
                     Ty::Other if occurrences => quote_spanned! { ty.span()=>
                         #parse(matches.#value_of(#name))
+                    },
+
+                    Ty::Other if flag => quote_spanned! { ty.span()=>
+                        #parse(matches.is_present(#name))
                     },
 
                     Ty::Other => quote_spanned! { ty.span()=>

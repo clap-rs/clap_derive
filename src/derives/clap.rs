@@ -95,6 +95,7 @@ fn gen_app_augmentation(
                 };
 
                 let occurrences = *attrs.parser().kind == ParserKind::FromOccurrences;
+                let flag = *attrs.parser().kind == ParserKind::FromFlag;
 
                 let parser = attrs.parser();
                 let func = &parser.func;
@@ -143,6 +144,11 @@ fn gen_app_augmentation(
 
                     Ty::Other if occurrences => quote_spanned! { ty.span()=>
                         .multiple_occurrences(true)
+                    },
+
+                    Ty::Other if flag => quote_spanned! { ty.span()=>
+                        .takes_value(false)
+                        .multiple(false)
                     },
 
                     Ty::Other => {

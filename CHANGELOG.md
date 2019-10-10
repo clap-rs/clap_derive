@@ -1,6 +1,8 @@
 # master
 ### Others
 
+* Add `from_flag` custom parser to create flags from non-bool types.
+  Fixes [#185](https://github.com/TeXitoi/structopt/issues/185)
 * `structopt` does not replace `:` with `, ` inside "author" strings while inside `<...>`.
   Fixes [#156](https://github.com/TeXitoi/structopt/issues/156)
 * Introduced [`#[structopt(skip = expr)]` syntax](https://docs.rs/structopt/0.3.2/structopt/#skipping-fields).

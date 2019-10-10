@@ -62,6 +62,37 @@ fn multiple_flag() {
     assert!(Opt::try_parse_from(&["test", "-a", "foo"]).is_err());
 }
 
+fn parse_from_flag(b: bool) -> std::sync::atomic::AtomicBool {
+    std::sync::atomic::AtomicBool::new(b)
+}
+
+#[test]
+fn non_bool_flags() {
+    #[derive(Clap, Debug)]
+    struct Opt {
+        #[clap(short = "a", long = "alice", parse(from_flag = parse_from_flag))]
+        alice: std::sync::atomic::AtomicBool,
+        #[clap(short = "b", long = "bob", parse(from_flag))]
+        bob: std::sync::atomic::AtomicBool,
+    }
+
+    let falsey = Opt::parse_from(&["test"]);
+    assert!(!falsey.alice.load(std::sync::atomic::Ordering::Relaxed));
+    assert!(!falsey.bob.load(std::sync::atomic::Ordering::Relaxed));
+
+    let alice = Opt::parse_from(&["test", "-a"]);
+    assert!(alice.alice.load(std::sync::atomic::Ordering::Relaxed));
+    assert!(!alice.bob.load(std::sync::atomic::Ordering::Relaxed));
+
+    let bob = Opt::parse_from(&["test", "-b"]);
+    assert!(!bob.alice.load(std::sync::atomic::Ordering::Relaxed));
+    assert!(bob.bob.load(std::sync::atomic::Ordering::Relaxed));
+
+    let both = Opt::parse_from(&["test", "-b", "-a"]);
+    assert!(both.alice.load(std::sync::atomic::Ordering::Relaxed));
+    assert!(both.bob.load(std::sync::atomic::Ordering::Relaxed));
+}
+
 #[test]
 fn combined_flags() {
     #[derive(Clap, PartialEq, Debug)]
