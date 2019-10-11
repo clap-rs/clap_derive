@@ -11,7 +11,7 @@ use clap::{AppSettings, Clap};
     author = "",
     raw(global_setting = "AppSettings::DisableVersion")
 )]
-struct Opt {}
+struct Opt;
 
 fn main() {
     let opt = Opt::parse();

@@ -303,6 +303,14 @@ pub fn derive_clap(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
             fields: syn::Fields::Named(ref fields),
             ..
         }) => clap_impl_for_struct(struct_name, &fields.named, &input.attrs),
+        Struct(syn::DataStruct {
+            fields: syn::Fields::Unit,
+            ..
+        }) => clap_impl_for_struct(
+            struct_name,
+            &punctuated::Punctuated::<syn::Field, token::Comma>::new(),
+            &input.attrs,
+        ),
         Enum(ref e) => clap_impl_for_enum(struct_name, &e.variants, &input.attrs),
         _ => panic!("clap_derive only supports non-tuple structs and enums"),
     };
