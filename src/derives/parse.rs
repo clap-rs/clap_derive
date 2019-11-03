@@ -148,7 +148,7 @@ impl Parse for ClapAttr {
                         }
 
                         Err(_) => span_error!(name.span(),
-                            "`#[clap(raw(...))` attributes are deprecated, only `raw(true)` and `raw(false)` are allowed")
+                            "`#[clap(raw(...))` attributes are removed, they are replaced with raw methods\nhelp: if you meant to call `clap::Arg::raw()` method you should use bool literal, like `raw(true)` or `raw(false)`")
                     }
                 }
 
