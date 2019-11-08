@@ -19,7 +19,7 @@ use syn::punctuated;
 use syn::token;
 use syn::spanned::Spanned as _;
 
-use derives::{self, Attrs, Kind, ParserKind, Ty, DEFAULT_CASING};
+use derives::{self, Attrs, Kind, Name, ParserKind, Ty, DEFAULT_CASING};
 use derives::spanned::Sp;
 
 pub fn derive_from_argmatches(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
@@ -38,7 +38,7 @@ pub fn derive_from_argmatches(input: &syn::DeriveInput) -> proc_macro2::TokenStr
             let attrs = Attrs::from_struct(
                 proc_macro2::Span::call_site(),
                 &input.attrs,
-                Sp::call_site(name),
+                Name::Assigned(syn::LitStr::new(&name, proc_macro2::Span::call_site())),
                 Sp::call_site(DEFAULT_CASING)
             );
 

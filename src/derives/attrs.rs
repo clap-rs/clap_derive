@@ -16,7 +16,7 @@ use heck::{CamelCase, KebabCase, MixedCase, ShoutySnakeCase, SnakeCase};
 use proc_macro2::{self, Span};
 use proc_macro_error::span_error;
 use std::env;
-use syn;
+use syn::{self, ext::IdentExt, LitStr};
 use syn::spanned::Spanned as _;
 use quote::ToTokens;
 
@@ -85,9 +85,14 @@ pub enum CasingStyle {
 }
 
 #[derive(Clone)]
+pub enum Name {
+    Derived(syn::Ident),
+    Assigned(syn::LitStr),
+}
+
+#[derive(Clone)]
 pub struct Attrs {
-    name: Sp<String>,
-    cased_name: String,
+    name: Name,
     casing: Sp<CasingStyle>,
     methods: Vec<Method>,
     parser: Sp<Parser>,
@@ -173,7 +178,9 @@ impl Parser {
 
         let func = match spec.parse_func {
             None => match kind {
-                FromStr | FromOsStr => quote_spanned!(spec.kind.span()=> ::std::convert::From::from),
+                FromStr | FromOsStr => {
+                    quote_spanned!(spec.kind.span()=> ::std::convert::From::from)
+                }
                 TryFromStr => quote_spanned!(spec.kind.span()=> ::std::str::FromStr::from_str),
                 TryFromOsStr => span_error!(
                     spec.kind.span(),
@@ -196,19 +203,6 @@ impl Parser {
 }
 
 impl CasingStyle {
-    fn translate(&self, input: &str) -> String {
-        use self::CasingStyle::*;
-
-        match self {
-            Pascal => input.to_camel_case(),
-            Kebab => input.to_kebab_case(),
-            Camel => input.to_mixed_case(),
-            ScreamingSnake => input.to_shouty_snake_case(),
-            Snake => input.to_snake_case(),
-            Verbatim => String::from(input),
-        }
-    }
-
     fn from_lit(name: syn::LitStr) -> Sp<Self> {
         use self::CasingStyle::*;
 
@@ -227,13 +221,32 @@ impl CasingStyle {
     }
 }
 
-impl Attrs {
-    fn new(default_span: Span, name: Sp<String>, casing: Sp<CasingStyle>) -> Self {
-        let cased_name = casing.translate(&name);
+impl Name {
+    pub fn translate(self, style: &CasingStyle) -> LitStr {
+        use self::CasingStyle::*;
 
+        match self {
+            Name::Assigned(lit) => lit,
+            Name::Derived(ident) => {
+                let s = ident.unraw().to_string();
+                let s = match style {
+                    Pascal => s.to_camel_case(),
+                    Kebab => s.to_kebab_case(),
+                    Camel => s.to_mixed_case(),
+                    ScreamingSnake => s.to_shouty_snake_case(),
+                    Snake => s.to_snake_case(),
+                    Verbatim => s,
+                };
+                syn::LitStr::new(&s, ident.span())
+            }
+        }
+    }
+}
+
+impl Attrs {
+    fn new(default_span: Span, name: Name, casing: Sp<CasingStyle>) -> Self {
         Self {
             name,
-            cased_name,
             casing,
             methods: vec![],
             parser: Parser::default_spanned(default_span.clone()),
@@ -251,8 +264,7 @@ impl Attrs {
     fn push_str_method(&mut self, name: Sp<String>, arg: Sp<String>) {
         match (&**name, &**arg) {
             ("name", _) => {
-                self.cased_name = self.casing.translate(&arg);
-                self.name = arg;
+                self.name = Name::Assigned(arg.as_lit());
             }
             _ => self
                 .methods
@@ -265,14 +277,11 @@ impl Attrs {
 
         for attr in parse_clap_attributes(attrs) {
             match attr {
-                Short(ident) => {
-                    let cased_name = Sp::call_site(self.cased_name.clone());
-                    self.push_str_method(ident.into(), cased_name);
-                }
-
-                Long(ident) => {
-                    let cased_name = Sp::call_site(self.cased_name.clone());
-                    self.push_str_method(ident.into(), cased_name);
+                Short(ident) | Long(ident) => {
+                    self.push_str_method(
+                        ident.into(),
+                        self.name.clone().translate(&self.casing).into(),
+                    );
                 }
 
                 Subcommand(ident) => {
@@ -317,7 +326,6 @@ impl Attrs {
 
                 RenameAll(_, casing_lit) => {
                     self.casing = CasingStyle::from_lit(casing_lit);
-                    self.cased_name = self.casing.translate(&self.name);
                 }
 
                 Parse(ident, spec) => {
@@ -413,7 +421,7 @@ impl Attrs {
     pub fn from_struct(
         span: Span,
         attrs: &[syn::Attribute],
-        name: Sp<String>,
+        name: Name,
         argument_casing: Sp<CasingStyle>,
     ) -> Self {
         let mut res = Self::new(span, name, argument_casing);
@@ -466,7 +474,7 @@ impl Attrs {
 
     pub fn from_field(field: &syn::Field, struct_casing: Sp<CasingStyle>) -> Self {
         let name = field.ident.clone().unwrap();
-        let mut res = Self::new(field.span(), name.into(), struct_casing);
+        let mut res = Self::new(field.span(), Name::Derived(name.clone()), struct_casing);
         res.push_doc_comment(&field.attrs, "help");
         res.push_attrs(&field.attrs);
 
@@ -478,7 +486,7 @@ impl Attrs {
                         "parse attribute is not allowed for flattened entry"
                     );
                 }
-                if !res.methods.is_empty() {
+                if res.has_explicit_methods() || res.has_doc_methods() {
                     span_error!(
                         res.kind.span(),
                         "methods and doc comments are not allowed for flattened entry"
@@ -492,9 +500,9 @@ impl Attrs {
                         "parse attribute is not allowed for subcommand"
                     );
                 }
-                if let Some(m) = res.methods.iter().find(|m| m.name != "help") {
+                if res.has_explicit_methods() {
                     span_error!(
-                        m.name.span(),
+                        res.kind.span(),
                         "methods in attributes are not allowed for subcommand"
                     );
                 }
@@ -519,12 +527,11 @@ impl Attrs {
                 res.kind = Sp::new(Kind::Subcommand(ty), res.kind.span());
             }
             Kind::Skip(_) => {
-                if let Some(m) = res
-                    .methods
-                    .iter()
-                    .find(|m| m.name != "help" && m.name != "long_help")
-                {
-                    span_error!(m.name.span(), "methods are not allowed for skipped fields");
+                if res.has_explicit_methods() {
+                    span_error!(
+                        res.kind.span(),
+                        "methods are not allowed for skipped fields"
+                    );
                 }
             }
             Kind::Arg(orig_ty) => {
@@ -554,8 +561,7 @@ impl Attrs {
                         }
                     }
                     Ty::OptionOption => {
-                        // If it's a positional argument.
-                        if !(res.has_method("long") || res.has_method("short")) {
+                        if res.is_positional() {
                             span_error!(
                                 ty.span(),
                                 "Option<Option<T>> type is meaningless for positional argument"
@@ -563,8 +569,7 @@ impl Attrs {
                         }
                     }
                     Ty::OptionVec => {
-                        // If it's a positional argument.
-                        if !(res.has_method("long") || res.has_method("short")) {
+                        if res.is_positional() {
                             span_error!(
                                 ty.span(),
                                 "Option<Vec<T>> type is meaningless for positional argument"
@@ -627,12 +632,11 @@ impl Attrs {
     /// generate methods on top of a field
     pub fn field_methods(&self) -> proc_macro2::TokenStream {
         let methods = &self.methods;
-
         quote!( #(#methods)* )
     }
 
-    pub fn cased_name(&self) -> String {
-        self.cased_name.to_string()
+    pub fn cased_name(&self) -> LitStr {
+        self.name.clone().translate(&self.casing)
     }
 
     pub fn parser(&self) -> &Sp<Parser> {
@@ -645,6 +649,24 @@ impl Attrs {
 
     pub fn casing(&self) -> Sp<CasingStyle> {
         self.casing.clone()
+    }
+
+    pub fn is_positional(&self) -> bool {
+        self.methods
+            .iter()
+            .all(|m| m.name != "long" && m.name != "short")
+    }
+
+    pub fn has_explicit_methods(&self) -> bool {
+        self.methods
+            .iter()
+            .any(|m| m.name != "help" && m.name != "long_help")
+    }
+
+    pub fn has_doc_methods(&self) -> bool {
+        self.methods
+            .iter()
+            .any(|m| m.name == "help" || m.name == "long_help")
     }
 }
 

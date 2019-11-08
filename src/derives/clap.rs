@@ -19,7 +19,7 @@ use syn::spanned::Spanned as _;
 use proc_macro_error::{span_error, call_site_error, set_dummy};
 
 use derives;
-use derives::attrs::{Attrs, Kind, ParserKind, Ty};
+use derives::attrs::{Attrs, Kind, Name, ParserKind, Ty};
 use derives::from_argmatches;
 use derives::into_app;
 
@@ -207,7 +207,7 @@ fn gen_augment_app_for_enum(
         let attrs = Attrs::from_struct(
             variant.span(),
             &variant.attrs,
-            variant.ident.clone().into(),
+            Name::Derived(variant.ident.clone()),
             parent_attribute.casing(),
         );
         let app_var = syn::Ident::new("subcommand", proc_macro2::Span::call_site());
@@ -264,7 +264,7 @@ fn gen_from_subcommand(
         let attrs = Attrs::from_struct(
             variant.span(),
             &variant.attrs,
-            variant.ident.clone().into(),
+            Name::Derived(variant.ident.clone()),
             parent_attribute.casing()
         );
         let sub_name = attrs.cased_name();

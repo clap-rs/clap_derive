@@ -16,7 +16,7 @@ use std::env;
 use proc_macro2;
 use syn;
 
-use derives::{Attrs, GenOutput, DEFAULT_CASING};
+use derives::{Attrs, Name, GenOutput, DEFAULT_CASING};
 use derives::spanned::Sp;
 
 pub fn derive_into_app(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
@@ -81,7 +81,7 @@ pub fn gen_app_builder(attrs: &[syn::Attribute]) -> GenOutput {
     let attrs = Attrs::from_struct(
         proc_macro2::Span::call_site(),
         attrs,
-        Sp::call_site(name),
+        Name::Assigned(syn::LitStr::new(&name, proc_macro2::Span::call_site())),
         Sp::call_site(DEFAULT_CASING)
     );
     let tokens = {
