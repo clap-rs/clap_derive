@@ -1,6 +1,7 @@
 # master
 ### Others
 
+* `try_from_str` functions are now called with a `&str` instead of a `&String` ([#282](https://github.com/TeXitoi/structopt/pull/282))
 * `rename_all` does not apply to fields that were annotated with explicit
   `short/long/name = "..."` anymore ([#265](https://github.com/TeXitoi/structopt/issues/265))
 * Now raw idents are handled correctly ([#269](https://github.com/TeXitoi/structopt/issues/269))

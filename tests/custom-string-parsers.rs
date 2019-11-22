@@ -17,7 +17,7 @@ extern crate clap;
 
 use clap::Clap;
 
-use std::ffi::OsStr;
+use std::ffi::{CString, OsStr, OsString};
 use std::num::ParseIntError;
 use std::path::PathBuf;
 
@@ -279,4 +279,19 @@ fn test_custom_bool() {
         },
         Opt::parse_from(&["test", "-dtrue", "-bfalse", "-btrue", "-bfalse", "-bfalse"])
     );
+}
+
+#[test]
+fn test_cstring() {
+    use clap::IntoApp;
+
+    #[derive(Clap)]
+    struct Opt {
+        #[clap(parse(try_from_str = CString::new))]
+        c_string: CString,
+    }
+
+    assert!(Opt::into_app().try_get_matches_from(&["test"]).is_err());
+    assert_eq!(Opt::parse_from(&["test", "bla"]).c_string.to_bytes(), b"bla");
+    assert!(Opt::into_app().try_get_matches_from(&["test", "bla\0bla"]).is_err());
 }
