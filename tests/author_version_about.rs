@@ -61,3 +61,19 @@ fn use_env() {
     let output = String::from_utf8(output).unwrap();
     assert_eq!(output, ENV_HELP);
 }
+
+#[test]
+fn explicit_version_not_str() {
+    use clap::IntoApp;
+
+    const VERSION: &str = "custom version";
+
+    #[derive(Clap)]
+    #[clap(version = VERSION)]
+    pub struct Opt {}
+
+    let mut output = Vec::new();
+    Opt::into_app().write_long_help(&mut output).unwrap();
+    let output = String::from_utf8(output).unwrap();
+    assert!(output.contains("custom version"));
+}
