@@ -1,3 +1,5 @@
+//! How to extract subcommands' args into external structs.
+
 #[macro_use]
 extern crate clap;
 

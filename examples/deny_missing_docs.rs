@@ -24,7 +24,7 @@ use clap::Clap;
 /// The options
 #[derive(Clap, Debug, PartialEq)]
 pub struct Opt {
-    #[clap(short = "v")]
+    #[clap(short)]
     verbose: bool,
     #[clap(subcommand)]
     cmd: Option<Cmd>,
@@ -38,7 +38,7 @@ pub enum Cmd {
     /// command B
     B {
         /// Alice?
-        #[clap(short = "a")]
+        #[clap(short)]
         alice: bool,
     },
     /// command C
@@ -48,7 +48,7 @@ pub enum Cmd {
 /// The options for C
 #[derive(Clap, Debug, PartialEq)]
 pub struct COpt {
-    #[clap(short = "b")]
+    #[clap(short)]
     bob: bool,
 }
 

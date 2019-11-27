@@ -1,3 +1,6 @@
+//! How to use environment variable fallback an how it
+//! interacts with `default_value`.
+
 #[macro_use]
 extern crate clap;
 

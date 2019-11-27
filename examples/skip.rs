@@ -1,3 +1,5 @@
+//! How to use `#[structopt(skip)]`
+
 #[macro_use]
 extern crate clap;
 
@@ -16,7 +18,7 @@ pub struct Opt {
     k2: Kind,
     #[clap(skip = vec![1, 2, 3])]
     v2: Vec<u32>,
-    #[clap(skip = "cake")]
+    #[clap(skip = "cake")] // &str implements Into<String>
     s: String,
 }
 

@@ -1,3 +1,5 @@
+//! How to use `arg_enum!` with `StructOpt`.
+
 #[macro_use]
 extern crate clap;
 

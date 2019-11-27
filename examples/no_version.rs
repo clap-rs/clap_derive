@@ -1,3 +1,5 @@
+//! How to completely remove version.
+
 #[macro_use]
 extern crate clap;
 

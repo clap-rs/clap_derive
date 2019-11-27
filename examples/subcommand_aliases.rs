@@ -1,3 +1,5 @@
+//! How to assign some aliases to subcommands
+
 #[macro_use]
 extern crate clap;
 
@@ -8,10 +10,10 @@ use clap::{AppSettings, Clap};
 #[clap(setting = AppSettings::InferSubcommands)]
 enum Opt {
     // https://docs.rs/clap/2/clap/struct.App.html#method.alias
-    #[clap(name = "foo", alias = "foobar")]
+    #[clap(alias = "foobar")]
     Foo,
     // https://docs.rs/clap/2/clap/struct.App.html#method.aliases
-    #[clap(name = "bar", aliases = &["baz", "fizz"])]
+    #[clap(aliases = &["baz", "fizz"])]
     Bar,
 }
 

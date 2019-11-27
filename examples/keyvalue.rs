@@ -1,3 +1,5 @@
+//! How to parse "key=value" pairs with structopt.
+
 #[macro_use]
 extern crate clap;
 
