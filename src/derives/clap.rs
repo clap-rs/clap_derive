@@ -12,16 +12,10 @@
 // commit#ea76fa1b1b273e65e3b0b1046643715b49bec51f which is licensed under the
 // MIT/Apache 2.0 license.
 use proc_macro2;
-use syn;
-use syn::punctuated;
-use syn::token;
-use syn::spanned::Spanned as _;
+use syn::{self, punctuated, token, spanned::Spanned};
 use proc_macro_error::{span_error, call_site_error, set_dummy};
 
-use derives;
-use derives::attrs::{Attrs, Kind, Name, ParserKind, Ty};
-use derives::from_argmatches;
-use derives::into_app;
+use derives::{self, Attrs, Kind, Name, ParserKind, Ty, from_argmatches, into_app};
 
 /// Generate a block of code to add arguments/subcommands corresponding to
 /// the `fields` to an app.

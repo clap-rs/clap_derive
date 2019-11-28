@@ -12,17 +12,15 @@
 // commit#ea76fa1b1b273e65e3b0b1046643715b49bec51f which is licensed under the
 // MIT/Apache 2.0 license.
 
-use heck::{CamelCase, KebabCase, MixedCase, ShoutySnakeCase, SnakeCase};
-use proc_macro2::{self, Span};
-use proc_macro_error::span_error;
-use std::env;
-use syn::{self, ext::IdentExt, LitStr};
-use syn::spanned::Spanned as _;
-use quote::ToTokens;
+use derives::{self, parse::*, spanned::Sp, ty::Ty};
 
-use derives;
-use derives::spanned::Sp;
-use derives::parse::{ParserSpec, parse_clap_attributes};
+use std::env;
+
+use heck::{CamelCase, KebabCase, MixedCase, ShoutySnakeCase, SnakeCase};
+use proc_macro2::{self, Span, TokenStream};
+use proc_macro_error::span_error;
+use quote::{quote, quote_spanned, ToTokens};
+use syn::{self, ext::IdentExt, spanned::Spanned, Attribute, Expr, Ident, LitStr, MetaNameValue};
 
 /// Default casing style for generated arguments.
 pub const DEFAULT_CASING: CasingStyle = CasingStyle::Kebab;
@@ -33,16 +31,6 @@ pub enum Kind {
     Subcommand(Sp<Ty>),
     FlattenStruct,
     Skip(Option<syn::Expr>),
-}
-
-#[derive(Copy, Clone, PartialEq, Debug)]
-pub enum Ty {
-    Bool,
-    Vec,
-    Option,
-    OptionOption,
-    OptionVec,
-    Other,
 }
 
 #[derive(Clone)]
@@ -446,32 +434,6 @@ impl Attrs {
         }
     }
 
-    fn ty_from_field(ty: &syn::Type) -> Sp<Ty> {
-        let t = |kind| Sp::new(kind, ty.span());
-        if let syn::Type::Path(syn::TypePath {
-            path: syn::Path { ref segments, .. },
-            ..
-        }) = *ty
-        {
-            match segments.iter().last().unwrap().ident.to_string().as_str() {
-                "bool" => t(Ty::Bool),
-                "Option" => derives::sub_type(ty)
-                    .map(Attrs::ty_from_field)
-                    .map(|ty| match *ty {
-                        Ty::Option => t(Ty::OptionOption),
-                        Ty::Vec => t(Ty::OptionVec),
-                        _ => t(Ty::Option),
-                    })
-                    .unwrap_or(t(Ty::Option)),
-
-                "Vec" => t(Ty::Vec),
-                _ => t(Ty::Other),
-            }
-        } else {
-            t(Ty::Other)
-        }
-    }
-
     pub fn from_field(field: &syn::Field, struct_casing: Sp<CasingStyle>) -> Self {
         let name = field.ident.clone().unwrap();
         let mut res = Self::new(field.span(), Name::Derived(name.clone()), struct_casing);
@@ -507,7 +469,7 @@ impl Attrs {
                     );
                 }
 
-                let ty = Self::ty_from_field(&field.ty);
+                let ty = Ty::from_syn_ty(&field.ty);
                 match *ty {
                     Ty::OptionOption => {
                         span_error!(
@@ -535,7 +497,7 @@ impl Attrs {
                 }
             }
             Kind::Arg(orig_ty) => {
-                let mut ty = Self::ty_from_field(&field.ty);
+                let mut ty = Ty::from_syn_ty(&field.ty);
                 if res.has_custom_parser {
                     match *ty {
                         Ty::Option | Ty::Vec | Ty::OptionVec => (),
