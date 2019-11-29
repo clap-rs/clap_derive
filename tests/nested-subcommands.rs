@@ -19,9 +19,9 @@ use clap::Clap;
 
 #[derive(Clap, PartialEq, Debug)]
 struct Opt {
-    #[clap(short = "f", long = "force")]
+    #[clap(short, long)]
     force: bool,
-    #[clap(short = "v", long = "verbose", parse(from_occurrences))]
+    #[clap(short, long, parse(from_occurrences))]
     verbose: u64,
     #[clap(subcommand)]
     cmd: Sub,
@@ -29,17 +29,15 @@ struct Opt {
 
 #[derive(Clap, PartialEq, Debug)]
 enum Sub {
-    #[clap(name = "fetch")]
     Fetch {},
-    #[clap(name = "add")]
     Add {},
 }
 
 #[derive(Clap, PartialEq, Debug)]
 struct Opt2 {
-    #[clap(short = "f", long = "force")]
+    #[clap(short, long)]
     force: bool,
-    #[clap(short = "v", long = "verbose", parse(from_occurrences))]
+    #[clap(short, long, parse(from_occurrences))]
     verbose: u64,
     #[clap(subcommand)]
     cmd: Option<Sub>,
@@ -114,7 +112,7 @@ fn test_badinput() {
 
 #[derive(Clap, PartialEq, Debug)]
 struct Opt3 {
-    #[clap(short = "a", long = "all")]
+    #[clap(short, long)]
     all: bool,
     #[clap(subcommand)]
     cmd: Sub2,
@@ -122,21 +120,17 @@ struct Opt3 {
 
 #[derive(Clap, PartialEq, Debug)]
 enum Sub2 {
-    #[clap(name = "foo")]
     Foo {
         file: String,
         #[clap(subcommand)]
         cmd: Sub3,
     },
-    #[clap(name = "bar")]
     Bar {},
 }
 
 #[derive(Clap, PartialEq, Debug)]
 enum Sub3 {
-    #[clap(name = "baz")]
     Baz {},
-    #[clap(name = "quux")]
     Quux {},
 }
 
@@ -156,12 +150,10 @@ fn test_subsubcommand() {
 
 #[derive(Clap, PartialEq, Debug)]
 enum SubSubCmdWithOption {
-    #[clap(name = "remote")]
     Remote {
         #[clap(subcommand)]
         cmd: Option<Remote>,
     },
-    #[clap(name = "stash")]
     Stash {
         #[clap(subcommand)]
         cmd: Stash,
@@ -169,17 +161,13 @@ enum SubSubCmdWithOption {
 }
 #[derive(Clap, PartialEq, Debug)]
 enum Remote {
-    #[clap(name = "add")]
     Add { name: String, url: String },
-    #[clap(name = "remove")]
     Remove { name: String },
 }
 
 #[derive(Clap, PartialEq, Debug)]
 enum Stash {
-    #[clap(name = "save")]
     Save,
-    #[clap(name = "pop")]
     Pop,
 }
 

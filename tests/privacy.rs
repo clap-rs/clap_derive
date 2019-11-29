@@ -28,9 +28,9 @@ mod options {
 mod subcommands {
     #[derive(Debug, Clap)]
     pub enum SubCommand {
-        #[clap(name = "foo", about = "foo")]
+        /// foo
         Foo {
-            #[clap(help = "foo")]
+            /// foo
             bars: Vec<String>,
         },
     }

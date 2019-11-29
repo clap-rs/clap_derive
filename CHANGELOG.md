@@ -1,6 +1,9 @@
 # master
 ### Others
 
+* **Bugfix**: `structopt` used to treat `::path::to::type::Vec<T>` as `Vec<T>`
+  special type. [This was considered erroneous](https://github.com/TeXitoi/structopt/pull/287).
+  (same for `Option<T>` and `bool`). Now only exact `Vec<T>` match is a special type.
 * Top level `#structopt[...]` raw methods on inner atructs/enums now work as expected
   ([#151](https://github.com/TeXitoi/structopt/issues/151)) ([#289](https://github.com/TeXitoi/structopt/issues/289)).
 * `try_from_str` functions are now called with a `&str` instead of a `&String` ([#282](https://github.com/TeXitoi/structopt/pull/282))

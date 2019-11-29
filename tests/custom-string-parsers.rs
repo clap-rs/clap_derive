@@ -23,16 +23,16 @@ use std::path::PathBuf;
 
 #[derive(Clap, PartialEq, Debug)]
 struct PathOpt {
-    #[clap(short = "p", long = "path", parse(from_os_str))]
+    #[clap(short, long, parse(from_os_str))]
     path: PathBuf,
 
-    #[clap(short = "d", default_value = "../", parse(from_os_str))]
+    #[clap(short, default_value = "../", parse(from_os_str))]
     default_path: PathBuf,
 
-    #[clap(short = "v", parse(from_os_str))]
+    #[clap(short, parse(from_os_str))]
     vector_path: Vec<PathBuf>,
 
-    #[clap(short = "o", parse(from_os_str))]
+    #[clap(short, parse(from_os_str))]
     option_path_1: Option<PathBuf>,
 
     #[clap(short = "q", parse(from_os_str))]
@@ -64,7 +64,7 @@ fn parse_hex(input: &str) -> Result<u64, ParseIntError> { u64::from_str_radix(in
 
 #[derive(Clap, PartialEq, Debug)]
 struct HexOpt {
-    #[clap(short = "n", parse(try_from_str = parse_hex))]
+    #[clap(short, parse(try_from_str = parse_hex))]
     number: u64,
 }
 
@@ -90,13 +90,13 @@ fn custom_parser_4(_: &OsStr) -> Result<&'static str, String> { Ok("D") }
 
 #[derive(Clap, PartialEq, Debug)]
 struct NoOpOpt {
-    #[clap(short = "a", parse(from_str = custom_parser_1))]
+    #[clap(short, parse(from_str = custom_parser_1))]
     a: &'static str,
-    #[clap(short = "b", parse(try_from_str = custom_parser_2))]
+    #[clap(short, parse(try_from_str = custom_parser_2))]
     b: &'static str,
-    #[clap(short = "c", parse(from_os_str = custom_parser_3))]
+    #[clap(short, parse(from_os_str = custom_parser_3))]
     c: &'static str,
-    #[clap(short = "d", parse(try_from_os_str = custom_parser_4))]
+    #[clap(short, parse(try_from_os_str = custom_parser_4))]
     d: &'static str,
 }
 
@@ -113,19 +113,19 @@ fn test_every_custom_parser() {
     );
 }
 
-// Note: can't use `Vec<u8>` directly, as structopt would instead look for
+// Note: can't use `Vec<u8>` directly, as clap would instead look for
 // conversion function from `&str` to `u8`.
 type Bytes = Vec<u8>;
 
 #[derive(Clap, PartialEq, Debug)]
 struct DefaultedOpt {
-    #[clap(short = "b", parse(from_str))]
+    #[clap(short, parse(from_str))]
     bytes: Bytes,
 
-    #[clap(short = "i", parse(try_from_str))]
+    #[clap(short, parse(try_from_str))]
     integer: u64,
 
-    #[clap(short = "p", parse(from_os_str))]
+    #[clap(short, parse(from_os_str))]
     path: PathBuf,
 }
 
@@ -156,19 +156,19 @@ fn foo(value: u64) -> Foo { Foo(value as u8) }
 
 #[derive(Clap, PartialEq, Debug)]
 struct Occurrences {
-    #[clap(short = "s", long = "signed", parse(from_occurrences))]
+    #[clap(short, long, parse(from_occurrences))]
     signed: i32,
 
-    #[clap(short = "l", parse(from_occurrences))]
+    #[clap(short, parse(from_occurrences))]
     little_signed: i8,
 
-    #[clap(short = "u", parse(from_occurrences))]
+    #[clap(short, parse(from_occurrences))]
     unsigned: usize,
 
     #[clap(short = "r", parse(from_occurrences))]
     little_unsigned: u8,
 
-    #[clap(short = "c", long = "custom", parse(from_occurrences = foo))]
+    #[clap(short, long, parse(from_occurrences = foo))]
     custom: Foo,
 }
 
@@ -199,17 +199,17 @@ fn test_custom_bool() {
     }
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "d", parse(try_from_str = parse_bool))]
+        #[clap(short, parse(try_from_str = parse_bool))]
         debug: bool,
         #[clap(
-            short = "v",
+            short,
             default_value = "false",
             parse(try_from_str = parse_bool)
         )]
         verbose: bool,
-        #[clap(short = "t", parse(try_from_str = parse_bool))]
+        #[clap(short, parse(try_from_str = parse_bool))]
         tribool: Option<bool>,
-        #[clap(short = "b", parse(try_from_str = parse_bool))]
+        #[clap(short, parse(try_from_str = parse_bool))]
         bitset: Vec<bool>,
     }
 

@@ -21,7 +21,7 @@ use clap::Clap;
 fn required_option() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a", long = "arg")]
+        #[clap(short, long)]
         arg: i32,
     }
     assert_eq!(Opt { arg: 42 }, Opt::parse_from(&["test", "-a42"]));
@@ -35,7 +35,7 @@ fn required_option() {
 fn optional_option() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a")]
+        #[clap(short)]
         arg: Option<i32>,
     }
     assert_eq!(Opt { arg: Some(42) }, Opt::parse_from(&["test", "-a42"]));
@@ -47,7 +47,7 @@ fn optional_option() {
 fn option_with_default() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a", default_value = "42")]
+        #[clap(short, default_value = "42")]
         arg: i32,
     }
     assert_eq!(Opt { arg: 24 }, Opt::parse_from(&["test", "-a24"]));
@@ -59,7 +59,7 @@ fn option_with_default() {
 fn option_with_raw_default() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a", default_value = "42")]
+        #[clap(short, default_value = "42")]
         arg: i32,
     }
     assert_eq!(Opt { arg: 24 }, Opt::parse_from(&["test", "-a24"]));
@@ -71,7 +71,7 @@ fn option_with_raw_default() {
 fn options() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a", long = "arg")]
+        #[clap(short, long)]
         arg: Vec<i32>,
     }
     assert_eq!(Opt { arg: vec![24] }, Opt::parse_from(&["test", "-a24"]));
@@ -86,7 +86,7 @@ fn options() {
 fn default_value() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a", default_value = "test")]
+        #[clap(short, default_value = "test")]
         arg: String,
     }
     assert_eq!(Opt { arg: "test".into() }, Opt::parse_from(&["test"]));
@@ -123,7 +123,8 @@ fn optional_argument_for_optional_option() {
 
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a")]
+        #[clap(short)]
+        #[allow(clippy::option_option)]
         arg: Option<Option<i32>>,
     }
     assert_eq!(
@@ -149,10 +150,10 @@ fn optional_argument_for_optional_option() {
 fn two_option_options() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a")]
+        #[clap(short)]
         arg: Option<Option<i32>>,
 
-        #[clap(long = "field")]
+        #[clap(long)]
         field: Option<Option<String>>,
     }
     assert_eq!(
@@ -203,7 +204,7 @@ fn two_option_options() {
 fn optional_vec() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a")]
+        #[clap(short)]
         arg: Option<Vec<i32>>,
     }
     assert_eq!(
@@ -266,10 +267,10 @@ fn optional_vec() {
 fn two_optional_vecs() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a")]
+        #[clap(short)]
         arg: Option<Vec<i32>>,
 
-        #[clap(short = "b")]
+        #[clap(short)]
         b: Option<Vec<i32>>,
     }
 

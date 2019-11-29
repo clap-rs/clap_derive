@@ -26,7 +26,7 @@ fn commets_intead_of_actual_help() {
     struct LoremIpsum {
         /// Fooify a bar
         /// and a baz
-        #[clap(short = "f", long = "foo")]
+        #[clap(short, long)]
         foo: bool,
     }
 
@@ -46,11 +46,7 @@ fn help_is_better_than_comments() {
     #[clap(name = "lorem-ipsum", about = "Dolor sit amet")]
     struct LoremIpsum {
         /// Fooify a bar
-        #[clap(
-            short = "f",
-            long = "foo",
-            help = "DO NOT PASS A BAR UNDER ANY CIRCUMSTANCES"
-        )]
+        #[clap(short, long, help = "DO NOT PASS A BAR UNDER ANY CIRCUMSTANCES")]
         foo: bool,
     }
 
@@ -95,7 +91,7 @@ fn splits_flag_doc_comment_between_short_and_long() {
         /// DO NOT PASS A BAR UNDER ANY CIRCUMSTANCES.
         ///
         /// Or something else
-        #[clap(long = "foo")]
+        #[clap(long)]
         foo: bool,
     }
 
@@ -138,7 +134,6 @@ fn splits_subcommand_doc_comment_between_short_and_long() {
         /// DO NOT PASS A BAR UNDER ANY CIRCUMSTANCES
         ///
         /// Or something else
-        #[clap(name = "foo")]
         Foo {
             #[clap(help = "foo")]
             bars: Vec<String>,

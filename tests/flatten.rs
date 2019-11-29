@@ -67,7 +67,7 @@ fn flatten_in_subcommand() {
 
     #[derive(Clap, PartialEq, Debug)]
     struct Add {
-        #[clap(short = "i")]
+        #[clap(short)]
         interactive: bool,
         #[clap(flatten)]
         common: Common,
@@ -75,15 +75,13 @@ fn flatten_in_subcommand() {
 
     #[derive(Clap, PartialEq, Debug)]
     enum Opt {
-        #[clap(name = "fetch")]
         Fetch {
-            #[clap(short = "a")]
+            #[clap(short)]
             all: bool,
             #[clap(flatten)]
             common: Common,
         },
 
-        #[clap(name = "add")]
         Add(Add),
     }
 

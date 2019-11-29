@@ -21,7 +21,7 @@ use clap::Clap;
 fn unique_flag() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a", long = "alice")]
+        #[clap(short, long)]
         alice: bool,
     }
 
@@ -38,9 +38,9 @@ fn unique_flag() {
 fn multiple_flag() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a", long = "alice", parse(from_occurrences))]
+        #[clap(short, long, parse(from_occurrences))]
         alice: u64,
-        #[clap(short = "b", long = "bob", parse(from_occurrences))]
+        #[clap(short, long, parse(from_occurrences))]
         bob: u8,
     }
 
@@ -70,9 +70,9 @@ fn parse_from_flag(b: bool) -> std::sync::atomic::AtomicBool {
 fn non_bool_flags() {
     #[derive(Clap, Debug)]
     struct Opt {
-        #[clap(short = "a", long = "alice", parse(from_flag = parse_from_flag))]
+        #[clap(short, long, parse(from_flag = parse_from_flag))]
         alice: std::sync::atomic::AtomicBool,
-        #[clap(short = "b", long = "bob", parse(from_flag))]
+        #[clap(short, long, parse(from_flag))]
         bob: std::sync::atomic::AtomicBool,
     }
 
@@ -97,9 +97,9 @@ fn non_bool_flags() {
 fn combined_flags() {
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
-        #[clap(short = "a", long = "alice")]
+        #[clap(short, long)]
         alice: bool,
-        #[clap(short = "b", long = "bob", parse(from_occurrences))]
+        #[clap(short, long, parse(from_occurrences))]
         bob: u64,
     }
 

@@ -19,21 +19,20 @@ use clap::Clap;
 
 #[derive(Clap, PartialEq, Debug)]
 enum Opt {
-    #[clap(name = "fetch", about = "Fetch stuff from GitHub.")]
+    /// Fetch stuff from GitHub
     Fetch {
-        #[clap(long = "all")]
+        #[clap(long)]
         all: bool,
-        #[clap(short = "f", long = "force")]
+        #[clap(short, long)]
         /// Overwrite local branches.
         force: bool,
         repo: String,
     },
 
-    #[clap(name = "add")]
     Add {
-        #[clap(short = "i", long = "interactive")]
+        #[clap(short, long)]
         interactive: bool,
-        #[clap(short = "v", long = "verbose")]
+        #[clap(short, long)]
         verbose: bool,
     },
 }
@@ -90,7 +89,6 @@ fn test_no_parse() {
 
 #[derive(Clap, PartialEq, Debug)]
 enum Opt2 {
-    #[clap(name = "do-something")]
     DoSomething { arg: String },
 }
 
@@ -108,11 +106,8 @@ fn test_hyphenated_subcommands() {
 
 #[derive(Clap, PartialEq, Debug)]
 enum Opt3 {
-    #[clap(name = "add")]
     Add,
-    #[clap(name = "init")]
     Init,
-    #[clap(name = "fetch")]
     Fetch,
 }
 
@@ -135,13 +130,11 @@ struct Fetch {
 }
 #[derive(Clap, PartialEq, Debug)]
 enum Opt4 {
-    /// Not shown
-    #[clap(name = "add", about = "Add a file")]
+    // Not shown
+    /// Add a file
     Add(Add),
-    #[clap(name = "init")]
     Init,
     /// download history from remote
-    #[clap(name = "fetch")]
     Fetch(Fetch),
 }
 
@@ -176,15 +169,12 @@ fn test_tuple_commands() {
 fn enum_in_enum_subsubcommand() {
     #[derive(Clap, Debug, PartialEq)]
     pub enum Opt {
-        #[clap(name = "daemon")]
         Daemon(DaemonCommand),
     }
 
     #[derive(Clap, Debug, PartialEq)]
     pub enum DaemonCommand {
-        #[clap(name = "start")]
         Start,
-        #[clap(name = "stop")]
         Stop,
     }
 
