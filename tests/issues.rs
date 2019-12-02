@@ -1,0 +1,69 @@
+// https://github.com/TeXitoi/structopt/issues/151
+// https://github.com/TeXitoi/structopt/issues/289
+
+#[macro_use]
+extern crate clap;
+
+#[test]
+fn issue_151() {
+    use clap::{ArgGroup, Clap, IntoApp};
+
+    #[derive(Clap, Debug)]
+    #[clap(group = ArgGroup::with_name("verb").required(true).multiple(true))]
+    struct Opt {
+        #[clap(long, group = "verb")]
+        foo: bool,
+        #[clap(long, group = "verb")]
+        bar: bool,
+    }
+
+    #[derive(Debug, Clap)]
+    struct Cli {
+        #[clap(flatten)]
+        a: Opt,
+    }
+
+    assert!(Cli::into_app()
+        .try_get_matches_from(&["test"])
+        .is_err());
+    assert!(Cli::into_app()
+        .try_get_matches_from(&["test", "--foo"])
+        .is_ok());
+    assert!(Cli::into_app()
+        .try_get_matches_from(&["test", "--bar"])
+        .is_ok());
+    assert!(Cli::into_app()
+        .try_get_matches_from(&["test", "--zebra"])
+        .is_err());
+}
+
+#[test]
+fn issue_289() {
+    use clap::{AppSettings, Clap, IntoApp};
+
+    #[derive(Clap)]
+    #[clap(setting = AppSettings::InferSubcommands)]
+    enum Args {
+        SomeCommand(SubSubCommand),
+        AnotherCommand,
+    }
+
+    #[derive(Clap)]
+    #[clap(setting = AppSettings::InferSubcommands)]
+    enum SubSubCommand {
+        TestCommand,
+    }
+
+    assert!(Args::into_app()
+        .try_get_matches_from(&["test", "some-command", "test-command"])
+        .is_ok());
+    assert!(Args::into_app()
+        .try_get_matches_from(&["test", "some", "test-command"])
+        .is_ok());
+    assert!(Args::into_app()
+        .try_get_matches_from(&["test", "some-command", "test"])
+        .is_ok());
+    assert!(Args::into_app()
+        .try_get_matches_from(&["test", "some", "test"])
+        .is_ok());
+}

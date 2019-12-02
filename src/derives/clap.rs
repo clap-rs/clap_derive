@@ -169,7 +169,9 @@ fn gen_app_augmentation(
         }
     });
 
+    let app_methods = parent_attribute.top_level_methods();
     quote! {{
+        let #app_var = #app_var#app_methods;
         #( #args )*
         #subcmd
         #app_var
@@ -238,11 +240,13 @@ fn gen_augment_app_for_enum(
         }
     });
 
+    let app_methods = parent_attribute.top_level_methods();
+
     quote! {
         pub fn augment_app<'b>(
             app: ::clap::App<'b>
         ) -> ::clap::App<'b> {
-            app #( #subcommands )*
+            app #app_methods #( #subcommands )*
         }
     }
 }

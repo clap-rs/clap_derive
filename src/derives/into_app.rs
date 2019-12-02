@@ -86,9 +86,7 @@ pub fn gen_app_builder(attrs: &[syn::Attribute]) -> GenOutput {
     );
     let tokens = {
         let name = attrs.cased_name();
-        let methods = attrs.top_level_methods();
-
-        quote!(::clap::App::new(#name)#methods)
+        quote!(::clap::App::new(#name))
     };
 
     GenOutput { tokens, attrs }

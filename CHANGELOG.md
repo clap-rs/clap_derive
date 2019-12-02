@@ -1,6 +1,8 @@
 # master
 ### Others
 
+* Top level `#structopt[...]` raw methods on inner atructs/enums now work as expected
+  ([#151](https://github.com/TeXitoi/structopt/issues/151)) ([#289](https://github.com/TeXitoi/structopt/issues/289)).
 * `try_from_str` functions are now called with a `&str` instead of a `&String` ([#282](https://github.com/TeXitoi/structopt/pull/282))
 * `rename_all` does not apply to fields that were annotated with explicit
   `short/long/name = "..."` anymore ([#265](https://github.com/TeXitoi/structopt/issues/265))
