@@ -18,11 +18,10 @@ pub struct ClapAttributes {
 impl Parse for ClapAttributes {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
+        let paren_token = parenthesized!(content in input);
+        let attrs = content.parse_terminated(ClapAttr::parse)?;
 
-        Ok(ClapAttributes {
-            paren_token: parenthesized!(content in input),
-            attrs: content.parse_terminated(ClapAttr::parse)?,
-        })
+        Ok(ClapAttributes { paren_token, attrs })
     }
 }
 
