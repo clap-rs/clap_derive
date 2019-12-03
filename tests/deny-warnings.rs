@@ -14,7 +14,6 @@
 
 #![deny(warnings)]
 
-#[macro_use]
 extern crate clap;
 
 use clap::Clap;

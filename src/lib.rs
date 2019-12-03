@@ -25,7 +25,7 @@ extern crate heck;
 extern crate proc_macro2;
 extern crate proc_macro_error;
 
-use proc_macro_error::filter_macro_errors;
+use proc_macro_error::proc_macro_error;
 
 mod derives;
 
@@ -38,27 +38,24 @@ mod derives;
 
 /// Generates the `Clap` impl.
 #[proc_macro_derive(Clap, attributes(clap))]
+#[proc_macro_error]
 pub fn clap(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    filter_macro_errors! {
-        let input: syn::DeriveInput = syn::parse(input).unwrap();
-        derives::derive_clap(&input).into()
-    }
+    let input: syn::DeriveInput = syn::parse(input).unwrap();
+    derives::derive_clap(&input).into()
 }
 
 /// Generates the `IntoApp` impl.
 #[proc_macro_derive(IntoApp, attributes(clap))]
+#[proc_macro_error]
 pub fn into_app(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    filter_macro_errors! {
-        let input: syn::DeriveInput = syn::parse(input).unwrap();
-        derives::derive_into_app(&input).into()
-    }
+    let input: syn::DeriveInput = syn::parse(input).unwrap();
+    derives::derive_into_app(&input).into()
 }
 
 /// Generates the `FromArgMatches` impl.
 #[proc_macro_derive(FromArgMatches)]
+#[proc_macro_error]
 pub fn from_argmatches(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    filter_macro_errors! {
-        let input: syn::DeriveInput = syn::parse(input).unwrap();
-        derives::derive_from_argmatches(&input).into()
-    }
+    let input: syn::DeriveInput = syn::parse(input).unwrap();
+    derives::derive_from_argmatches(&input).into()
 }

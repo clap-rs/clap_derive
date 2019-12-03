@@ -13,7 +13,7 @@
 // MIT/Apache 2.0 license.
 use proc_macro2;
 use syn::{self, punctuated, token, spanned::Spanned};
-use proc_macro_error::{span_error, call_site_error, set_dummy};
+use proc_macro_error::{abort, abort_call_site, set_dummy};
 
 use derives::{self, Attrs, Kind, Name, ParserKind, Ty, from_argmatches, into_app};
 
@@ -57,7 +57,7 @@ fn gen_app_augmentation(
 
     let subcmd = subcmds.next().map(|(_, ts)| ts);
     if let Some((span, _)) = subcmds.next() {
-        span_error!(
+        abort!(
             span,
             "multiple subcommand sets are not allowed, that's the second"
         );
@@ -225,7 +225,7 @@ fn gen_augment_app_for_enum(
                     }
                 }
             }
-            Unnamed(..) => call_site_error!("{}: tuple enums are not supported", variant.ident),
+            Unnamed(..) => abort_call_site!("{}: tuple enums are not supported", variant.ident),
         };
 
         let name = attrs.cased_name();
@@ -274,7 +274,7 @@ fn gen_from_subcommand(
                 let ty = &fields.unnamed[0];
                 quote!( ( <#ty as ::clap::FromArgMatches>::from_argmatches(matches) ) )
             }
-            Unnamed(..) => call_site_error!("{}: tuple enums are not supported", variant.ident),
+            Unnamed(..) => abort_call_site!("{}: tuple enums are not supported", variant.ident),
         };
 
         quote! {
@@ -365,7 +365,7 @@ pub fn derive_clap(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
     let struct_name = &input.ident;
 
-    set_dummy(Some(quote! {
+    set_dummy(quote! {
         impl ::clap::Clap for #struct_name {}
 
         impl ::clap::IntoApp for #struct_name {
@@ -385,7 +385,7 @@ pub fn derive_clap(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 unimplemented!();
             }
         }
-    }));
+    });
 
     match input.data {
         Struct(syn::DataStruct {
@@ -393,7 +393,7 @@ pub fn derive_clap(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
             ..
         }) => clap_impl_for_struct(struct_name, &fields.named, &input.attrs),
         Enum(ref e) => clap_impl_for_enum(struct_name, &e.variants, &input.attrs),
-        _ => call_site_error!("clap_derive only supports non-tuple structs and enums"),
+        _ => abort_call_site!("clap_derive only supports non-tuple structs and enums"),
     }
 }
 
