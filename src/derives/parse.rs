@@ -1,9 +1,10 @@
 use std::iter::FromIterator;
 
+use proc_macro2::TokenStream;
 use proc_macro_error::{abort, ResultExt};
 use syn::{
     self, parenthesized,
-    parse::{Parse, ParseStream},
+    parse::{Parse, ParseBuffer, ParseStream},
     parse2,
     punctuated::Punctuated,
     spanned::Spanned,
@@ -74,7 +75,7 @@ impl Parse for ClapAttr {
                     if lit_str.is_empty() {
                         abort!(
                             lit.span(),
-                            "`#[clap({} = \"\") is deprecated, \
+                            "`#[clap({} = \"\")` is deprecated, \
                              now it's default behavior",
                             s
                         );
@@ -159,8 +160,7 @@ impl Parse for ClapAttr {
                             they are replaced with raw methods";
                             help = "if you meant to call `clap::Arg::raw()` method \
                                 you should use bool literal, like `raw(true)` or `raw(false)`";
-                            note = "if you need to call some method from `clap::Arg/App` you \
-                                should use raw method";
+                            note = raw_method_suggestion(nested);
                         );
                     }
                 },
@@ -220,6 +220,28 @@ impl Parse for ParserSpec {
             eq_token,
             parse_func,
         })
+    }
+}
+
+fn raw_method_suggestion(ts: ParseBuffer) -> String {
+    let do_parse = move || -> Result<(Ident, TokenStream), syn::Error> {
+        let name = ts.parse()?;
+        let _eq: Token![=] = ts.parse()?;
+        let val: LitStr = ts.parse()?;
+        Ok((name, syn::parse_str(&val.value())?))
+    };
+    if let Ok((name, val)) = do_parse() {
+        let val = val.to_string().replace(" ", "").replace(",", ", ");
+        format!(
+            "if you need to call `clap::Arg/App::{}` method you \
+             can do it like this: #[clap({}({}))]",
+            name, name, val
+        )
+    } else {
+        "if you need to call some method from `clap::Arg/App` \
+         you should use raw method, see \
+         https://docs.rs/structopt/0.3/structopt/#raw-methods"
+            .into()
     }
 }
 
