@@ -291,7 +291,7 @@ fn test_cstring() {
         c_string: CString,
     }
 
-    assert!(Opt::into_app().try_get_matches_from(&["test"]).is_err());
+    assert!(Opt::try_parse_from(&["test"]).is_err());
     assert_eq!(Opt::parse_from(&["test", "bla"]).c_string.to_bytes(), b"bla");
-    assert!(Opt::into_app().try_get_matches_from(&["test", "bla\0bla"]).is_err());
+    assert!(Opt::try_parse_from(&["test", "bla\0bla"]).is_err());
 }

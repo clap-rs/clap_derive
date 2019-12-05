@@ -23,18 +23,10 @@ fn issue_151() {
         a: Opt,
     }
 
-    assert!(Cli::into_app()
-        .try_get_matches_from(&["test"])
-        .is_err());
-    assert!(Cli::into_app()
-        .try_get_matches_from(&["test", "--foo"])
-        .is_ok());
-    assert!(Cli::into_app()
-        .try_get_matches_from(&["test", "--bar"])
-        .is_ok());
-    assert!(Cli::into_app()
-        .try_get_matches_from(&["test", "--zebra"])
-        .is_err());
+    assert!(Cli::try_parse_from(&["test"]).is_err());
+    assert!(Cli::try_parse_from(&["test", "--foo"]).is_ok());
+    assert!(Cli::try_parse_from(&["test", "--bar"]).is_ok());
+    assert!(Cli::try_parse_from(&["test", "--zebra"]).is_err());
 }
 
 #[test]
@@ -54,16 +46,8 @@ fn issue_289() {
         TestCommand,
     }
 
-    assert!(Args::into_app()
-        .try_get_matches_from(&["test", "some-command", "test-command"])
-        .is_ok());
-    assert!(Args::into_app()
-        .try_get_matches_from(&["test", "some", "test-command"])
-        .is_ok());
-    assert!(Args::into_app()
-        .try_get_matches_from(&["test", "some-command", "test"])
-        .is_ok());
-    assert!(Args::into_app()
-        .try_get_matches_from(&["test", "some", "test"])
-        .is_ok());
+    assert!(Args::try_parse_from(&["test", "some-command", "test-command"]).is_ok());
+    assert!(Args::try_parse_from(&["test", "some", "test-command"]).is_ok());
+    assert!(Args::try_parse_from(&["test", "some-command", "test"]).is_ok());
+    assert!(Args::try_parse_from(&["test", "some", "test"]).is_ok());
 }

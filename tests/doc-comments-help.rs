@@ -15,12 +15,13 @@
 #[macro_use]
 extern crate clap;
 
+mod utils;
+
 use clap::Clap;
+use utils::*;
 
 #[test]
-fn commets_intead_of_actual_help() {
-    use clap::IntoApp;
-
+fn doc_comments() {
     /// Lorem ipsum
     #[derive(Clap, PartialEq, Debug)]
     struct LoremIpsum {
@@ -30,17 +31,13 @@ fn commets_intead_of_actual_help() {
         foo: bool,
     }
 
-    let mut output = Vec::new();
-    LoremIpsum::into_app().write_long_help(&mut output).unwrap();
-    let output = String::from_utf8(output).unwrap();
-
-    assert!(output.contains("Lorem ipsum"));
-    assert!(output.contains("Fooify a bar and a baz"));
+    let help = get_long_help::<LoremIpsum>();
+    assert!(help.contains("Lorem ipsum"));
+    assert!(help.contains("Fooify a bar and a baz"));
 }
 
 #[test]
 fn help_is_better_than_comments() {
-    use clap::IntoApp;
     /// Lorem ipsum
     #[derive(Clap, PartialEq, Debug)]
     #[clap(name = "lorem-ipsum", about = "Dolor sit amet")]
@@ -50,22 +47,14 @@ fn help_is_better_than_comments() {
         foo: bool,
     }
 
-    let mut output = Vec::new();
-    LoremIpsum::into_app().write_long_help(&mut output).unwrap();
-    let output = String::from_utf8(output).unwrap();
-
-    for line in output.split("\n") {
-        println!("{:#?}", line);
-    }
-
-    assert!(output.contains("Dolor sit amet"));
-    assert!(!output.contains("Lorem ipsum"));
-    assert!(output.contains("DO NOT PASS A BAR"));
+    let help = get_long_help::<LoremIpsum>();
+    assert!(help.contains("Dolor sit amet"));
+    assert!(!help.contains("Lorem ipsum"));
+    assert!(help.contains("DO NOT PASS A BAR"));
 }
 
 #[test]
 fn empty_line_in_doc_comment_is_double_linefeed() {
-    use clap::IntoApp;
     /// Foo.
     ///
     /// Bar
@@ -73,17 +62,12 @@ fn empty_line_in_doc_comment_is_double_linefeed() {
     #[clap(name = "lorem-ipsum", no_version)]
     struct LoremIpsum {}
 
-    let mut output = Vec::new();
-    LoremIpsum::into_app().write_long_help(&mut output).unwrap();
-    let output = String::from_utf8(output).unwrap();
-
-    println!("{}", output);
-    assert!(output.starts_with("lorem-ipsum \nFoo.\n\nBar\n\nUSAGE:"));
+    let help = get_long_help::<LoremIpsum>();
+    assert!(help.starts_with("lorem-ipsum \nFoo.\n\nBar\n\nUSAGE:"));
 }
 
 #[test]
-fn splits_flag_doc_comment_between_short_and_long() {
-    use clap::IntoApp;
+fn field_long_doc_comment_both_help_long_help() {
     /// Lorem ipsumclap
     #[derive(Clap, PartialEq, Debug)]
     #[clap(name = "lorem-ipsum", about = "Dolor sit amet")]
@@ -95,21 +79,8 @@ fn splits_flag_doc_comment_between_short_and_long() {
         foo: bool,
     }
 
-    let mut app = LoremIpsum::into_app();
-
-    let short_help = {
-        let mut buffer = Vec::new();
-        app.write_help(&mut buffer).ok();
-
-        String::from_utf8(buffer).unwrap()
-    };
-
-    let long_help = {
-        let mut buffer = Vec::new();
-        app.write_long_help(&mut buffer).ok();
-
-        String::from_utf8(buffer).unwrap()
-    };
+    let short_help = get_help::<LoremIpsum>();
+    let long_help = get_long_help::<LoremIpsum>();
 
     assert!(short_help.contains("CIRCUMSTANCES"));
     assert!(!short_help.contains("CIRCUMSTANCES."));
@@ -119,8 +90,7 @@ fn splits_flag_doc_comment_between_short_and_long() {
 }
 
 #[test]
-fn splits_subcommand_doc_comment_between_short_and_long() {
-    use clap::IntoApp;
+fn top_long_doc_comment_both_help_long_help() {
     /// Lorem ipsumclap
     #[derive(Clap, Debug)]
     #[clap(name = "lorem-ipsum", about = "Dolor sit amet")]
@@ -140,20 +110,8 @@ fn splits_subcommand_doc_comment_between_short_and_long() {
         },
     }
 
-    let mut app = LoremIpsum::into_app();
-
-    let short_help = {
-        let mut buffer = Vec::new();
-        app.write_help(&mut buffer).ok();
-
-        String::from_utf8(buffer).unwrap()
-    };
-
-    let long_help = {
-        app.try_get_matches_from(vec!["test", "foo", "--help"])
-            .expect_err("")
-            .message
-    };
+    let short_help = get_help::<LoremIpsum>();
+    let long_help = get_subcommand_long_help::<LoremIpsum>("foo");
 
     assert!(!short_help.contains("Or something else"));
     assert!(long_help.contains("DO NOT PASS A BAR UNDER ANY CIRCUMSTANCES"));

@@ -176,10 +176,7 @@ fn sub_sub_cmd_with_option() {
     fn make(args: &[&str]) -> Option<SubSubCmdWithOption> {
         use clap::{FromArgMatches, IntoApp};
 
-        SubSubCmdWithOption::into_app()
-            .try_get_matches_from(args)
-            .ok()
-            .map(|m| SubSubCmdWithOption::from_argmatches(&m))
+        SubSubCmdWithOption::try_parse_from(args).ok()
     }
     assert_eq!(
         Some(SubSubCmdWithOption::Remote { cmd: None }),

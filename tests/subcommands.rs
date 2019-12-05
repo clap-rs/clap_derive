@@ -15,7 +15,10 @@
 #[macro_use]
 extern crate clap;
 
+mod utils;
+
 use clap::Clap;
+use utils::*;
 
 #[derive(Clap, PartialEq, Debug)]
 enum Opt {
@@ -156,9 +159,7 @@ fn test_tuple_commands() {
         Opt4::parse_from(&["test", "fetch", "origin"])
     );
 
-    let mut output = Vec::new();
-    Opt4::into_app().write_long_help(&mut output).unwrap();
-    let output = String::from_utf8(output).unwrap();
+    let output = get_long_help::<Opt4>();
 
     assert!(output.contains("download history from remote"));
     assert!(output.contains("Add a file"));

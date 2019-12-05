@@ -141,9 +141,7 @@ fn optional_argument_for_optional_option() {
         Opt { arg: None },
         Opt::parse_from(&["test"])
     );
-    assert!(Opt::into_app()
-        .try_get_matches_from(&["test", "-a42", "-a24"])
-        .is_err());
+    assert!(Opt::try_parse_from(&["test", "-a42", "-a24"]).is_err());
 }
 
 #[test]

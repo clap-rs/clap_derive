@@ -1,7 +1,10 @@
 #[macro_use]
 extern crate clap;
 
+mod utils;
+
 use clap::Clap;
+use utils::*;
 
 #[test]
 fn explicit_short_long_no_rename() {
@@ -21,17 +24,12 @@ fn explicit_short_long_no_rename() {
 
 #[test]
 fn explicit_name_no_rename() {
-    use clap::IntoApp;
-
     #[derive(Clap, PartialEq, Debug)]
     struct Opt {
         #[clap(name = ".options")]
         foo: Vec<String>,
     }
 
-    let mut output = Vec::new();
-    Opt::into_app().write_long_help(&mut output).unwrap();
-    let help = String::from_utf8(output).unwrap();
-
+    let help = get_long_help::<Opt>();
     assert!(help.contains("[.options]..."))
 }

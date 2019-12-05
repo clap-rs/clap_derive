@@ -15,65 +15,41 @@
 #[macro_use]
 extern crate clap;
 
+mod utils;
+
 use clap::Clap;
+use utils::*;
 
 #[test]
 fn no_author_version_about() {
-    use clap::IntoApp;
-
     #[derive(Clap, PartialEq, Debug)]
     #[clap(name = "foo", no_version)]
     struct Opt {}
 
-    let mut output = Vec::new();
-    Opt::into_app().write_long_help(&mut output).unwrap();
-    let output = String::from_utf8(output).unwrap();
-
+    let output = get_long_help::<Opt>();
     assert!(output.starts_with("foo \n\nUSAGE:"));
 }
 
-static ENV_HELP: &str = "clap_derive 0.3.0
-Guillaume Pinot <texitoi@texitoi.eu>, Kevin K. <kbknapp@gmail.com>, hoverbear <andrew@hoverbear.org>
-Parse command line argument by defining a struct, derive crate.
-
-USAGE:
-    clap_derive
-
-FLAGS:
-    -h, --help       
-            Prints help information
-
-    -V, --version    
-            Prints version information
-
-";
-
 #[test]
 fn use_env() {
-    use clap::IntoApp;
-
     #[derive(Clap, PartialEq, Debug)]
     #[clap(author, about)]
     struct Opt {}
 
-    let mut output = Vec::new();
-    Opt::into_app().write_long_help(&mut output).unwrap();
-    let output = String::from_utf8(output).unwrap();
-    assert_eq!(output, ENV_HELP);
+    let output = get_long_help::<Opt>();
+    assert!(output.starts_with("clap_derive"));
+    assert!(output.contains("Guillaume Pinot <texitoi@texitoi.eu>, Kevin K. <kbknapp@gmail.com>"));
+    assert!(output.contains("Parse command line argument by defining a struct, derive crate"));
 }
 
 #[test]
 fn explicit_version_not_str() {
-    use clap::IntoApp;
-
     const VERSION: &str = "custom version";
 
     #[derive(Clap)]
     #[clap(version = VERSION)]
     pub struct Opt {}
 
-    let mut output = Vec::new();
-    Opt::into_app().write_long_help(&mut output).unwrap();
-    let output = String::from_utf8(output).unwrap();
+    let output = get_long_help::<Opt>();
     assert!(output.contains("custom version"));
 }
