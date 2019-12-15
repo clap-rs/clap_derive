@@ -42,7 +42,7 @@ struct Opt {
     /// argument is provided (i.e. `--log`) and will be
     /// `Some(Some(String))` if argument is provided (e.g. `--log
     /// log.txt`).
-    #[structopt(
+    #[clap(
         long = "log",
         help = "Log file, stdout if no file, no logging if not present"
     )]
@@ -52,12 +52,12 @@ struct Opt {
     /// the command line, will be `Some(vec![])` if no argument is
     /// provided (i.e. `--optv`) and will be `Some(Some(String))` if
     /// argument list is provided (e.g. `--optv a b c`).
-    #[structopt(long = "optv")]
+    #[clap(long = "optv")]
     optv: Option<Vec<String>>,
 
     /// Skipped option: it won't be parsed and will be filled with the
     /// default value for its type (in this case '').
-    #[structopt(skip)]
+    #[clap(skip)]
     skipped: String,
 }
 

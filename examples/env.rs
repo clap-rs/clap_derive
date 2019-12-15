@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate clap;
+
 use clap::Clap;
 
 /// Example for allowing to specify options via environment variables.
