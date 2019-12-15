@@ -2,6 +2,6 @@ error[E0599]: no method named `non_existing_attribute` found for type `clap::bui
   --> $DIR/non_existent_attr.rs:14:19
    |
 14 |     #[clap(short, non_existing_attribute = 1)]
-   |                   ^^^^^^^^^^^^^^^^^^^^^^
+   |                   ^^^^^^^^^^^^^^^^^^^^^^ method not found in `clap::build::arg::Arg<'_>`
 
 For more information about this error, try `rustc --explain E0599`.

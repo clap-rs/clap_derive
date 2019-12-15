@@ -16,7 +16,7 @@ use std::env;
 use proc_macro2;
 use syn;
 
-use derives::{Attrs, CasingStyle, GenOutput, DEFAULT_CASING};
+use derives::{Attrs, GenOutput, DEFAULT_CASING};
 use derives::spanned::Sp;
 
 pub fn derive_into_app(input: &syn::DeriveInput) -> proc_macro2::TokenStream {

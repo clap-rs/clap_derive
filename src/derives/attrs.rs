@@ -15,7 +15,7 @@
 use heck::{CamelCase, KebabCase, MixedCase, ShoutySnakeCase, SnakeCase};
 use proc_macro2;
 use proc_macro_error::{span_error, call_site_error};
-use std::{env, mem};
+use std::env;
 use syn;
 use syn::spanned::Spanned as _;
 
