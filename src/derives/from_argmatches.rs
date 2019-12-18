@@ -16,11 +16,10 @@ use std::env;
 use proc_macro2;
 use syn;
 use syn::punctuated;
-use syn::token;
 use syn::spanned::Spanned as _;
+use syn::token;
 
-use derives::{self, Attrs, Kind, Name, ParserKind, Ty, DEFAULT_CASING};
-use derives::spanned::Sp;
+use super::{spanned::Sp, sub_type, Attrs, Kind, Name, ParserKind, Ty, DEFAULT_CASING};
 
 pub fn derive_from_argmatches(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     use syn::Data::*;
@@ -39,11 +38,11 @@ pub fn derive_from_argmatches(input: &syn::DeriveInput) -> proc_macro2::TokenStr
                 proc_macro2::Span::call_site(),
                 &input.attrs,
                 Name::Assigned(syn::LitStr::new(&name, proc_macro2::Span::call_site())),
-                Sp::call_site(DEFAULT_CASING)
+                Sp::call_site(DEFAULT_CASING),
             );
 
             gen_from_argmatches_impl_for_struct(struct_name, &fields.named, &attrs)
-        },
+        }
         // Enum(ref e) => clap_for_enum_impl(struct_name, &e.variants, &input.attrs),
         _ => panic!("clap_derive only supports non-tuple structs"), // and enums"),
     };
@@ -98,7 +97,7 @@ pub fn gen_constructor(
         let kind = attrs.kind();
         match &*attrs.kind() {
             Kind::Subcommand(ty) => {
-                let subcmd_type = match (**ty, derives::sub_type(&field.ty)) {
+                let subcmd_type = match (**ty, sub_type(&field.ty)) {
                     (Ty::Option, Some(sub_type)) => sub_type,
                     _ => &field.ty,
                 };
@@ -150,7 +149,7 @@ pub fn gen_constructor(
                     FromOccurrences => (
                         quote_spanned!(span=> occurrences_of),
                         quote!(),
-                        func.clone()
+                        func.clone(),
                     ),
                     FromFlag => (quote!(), quote!(), func.clone()),
                 };

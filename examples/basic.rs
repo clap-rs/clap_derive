@@ -1,8 +1,5 @@
 //! A somewhat comprehensive example of a typical `StructOpt` usage.use
 
-#[macro_use]
-extern crate clap;
-
 use clap::Clap;
 use std::path::PathBuf;
 

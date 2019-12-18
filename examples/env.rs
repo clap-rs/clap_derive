@@ -1,9 +1,6 @@
 //! How to use environment variable fallback an how it
 //! interacts with `default_value`.
 
-#[macro_use]
-extern crate clap;
-
 use clap::Clap;
 
 /// Example for allowing to specify options via environment variables.

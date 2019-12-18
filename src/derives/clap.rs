@@ -12,10 +12,10 @@
 // commit#ea76fa1b1b273e65e3b0b1046643715b49bec51f which is licensed under the
 // MIT/Apache 2.0 license.
 use proc_macro2;
-use syn::{self, punctuated, token, spanned::Spanned};
 use proc_macro_error::{abort, abort_call_site, set_dummy};
+use syn::{self, punctuated, spanned::Spanned, token};
 
-use derives::{self, Attrs, Kind, Name, ParserKind, Ty, from_argmatches, into_app};
+use super::{from_argmatches, into_app, sub_type, Attrs, Kind, Name, ParserKind, Ty};
 
 /// Generate a block of code to add arguments/subcommands corresponding to
 /// the `fields` to an app.
@@ -24,37 +24,34 @@ fn gen_app_augmentation(
     app_var: &syn::Ident,
     parent_attribute: &Attrs,
 ) -> proc_macro2::TokenStream {
-    let mut subcmds = fields
-        .iter()
-        .filter_map(|field| {
-            let attrs = Attrs::from_field(&field, parent_attribute.casing());
-            let kind = attrs.kind();
-            if let Kind::Subcommand(ty) = &*kind {
-                let subcmd_type = match (**ty, derives::sub_type(&field.ty)) {
-                    (Ty::Option, Some(sub_type)) => sub_type,
-                    _ => &field.ty,
-                };
-                let required = if **ty == Ty::Option {
-                    quote!()
-                } else {
-                    quote_spanned! { kind.span()=>
-                        let #app_var = #app_var.setting(
-                            ::clap::AppSettings::SubcommandRequiredElseHelp
-                        );
-                    }
-                };
-
-                let span = field.span();
-                let ts = quote! {
-                    let #app_var = <#subcmd_type>::augment_app( #app_var );
-                    #required
-                };
-                Some((span, ts))
+    let mut subcmds = fields.iter().filter_map(|field| {
+        let attrs = Attrs::from_field(&field, parent_attribute.casing());
+        let kind = attrs.kind();
+        if let Kind::Subcommand(ty) = &*kind {
+            let subcmd_type = match (**ty, sub_type(&field.ty)) {
+                (Ty::Option, Some(sub_type)) => sub_type,
+                _ => &field.ty,
+            };
+            let required = if **ty == Ty::Option {
+                quote!()
             } else {
-                None
-            }
-        });
+                quote_spanned! { kind.span()=>
+                    let #app_var = #app_var.setting(
+                        ::clap::AppSettings::SubcommandRequiredElseHelp
+                    );
+                }
+            };
 
+            let span = field.span();
+            let ts = quote! {
+                let #app_var = <#subcmd_type>::augment_app( #app_var );
+                #required
+            };
+            Some((span, ts))
+        } else {
+            None
+        }
+    });
     let subcmd = subcmds.next().map(|(_, ts)| ts);
     if let Some((span, _)) = subcmds.next() {
         abort!(
@@ -81,9 +78,9 @@ fn gen_app_augmentation(
             }
             Kind::Arg(ty) => {
                 let convert_type = match **ty {
-                    Ty::Vec | Ty::Option => derives::sub_type(&field.ty).unwrap_or(&field.ty),
+                    Ty::Vec | Ty::Option => sub_type(&field.ty).unwrap_or(&field.ty),
                     Ty::OptionOption | Ty::OptionVec => {
-                        derives::sub_type(&field.ty).and_then(derives::sub_type).unwrap_or(&field.ty)
+                        sub_type(&field.ty).and_then(sub_type).unwrap_or(&field.ty)
                     }
                     _ => &field.ty,
                 };
@@ -263,7 +260,7 @@ fn gen_from_subcommand(
             variant.span(),
             &variant.attrs,
             Name::Derived(variant.ident.clone()),
-            parent_attribute.casing()
+            parent_attribute.casing(),
         );
         let sub_name = attrs.cased_name();
         let variant_name = &variant.ident;
@@ -303,7 +300,8 @@ fn clap_impl_for_struct(
     let into_app_impl = into_app::gen_into_app_impl_for_struct(name, attrs);
     let into_app_impl_tokens = into_app_impl.tokens;
     let augment_app_fn = gen_augment_app_fn(fields, &into_app_impl.attrs);
-    let from_argmatches_impl = from_argmatches::gen_from_argmatches_impl_for_struct(name, fields, &into_app_impl.attrs);
+    let from_argmatches_impl =
+        from_argmatches::gen_from_argmatches_impl_for_struct(name, fields, &into_app_impl.attrs);
     let parse_fns = gen_parse_fns(name);
 
     quote! {

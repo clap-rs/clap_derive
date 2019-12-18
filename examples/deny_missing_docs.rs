@@ -16,9 +16,6 @@
 
 #![deny(missing_docs)]
 
-#[macro_use]
-extern crate clap;
-
 use clap::Clap;
 
 /// The options

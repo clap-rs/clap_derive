@@ -1,8 +1,5 @@
 //! Checks that types like `::std::option::Option` are not special
 
-#[macro_use]
-extern crate clap;
-
 use clap::Clap;
 
 #[rustversion::since(1.37)]

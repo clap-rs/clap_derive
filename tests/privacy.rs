@@ -12,20 +12,19 @@
 // commit#ea76fa1b1b273e65e3b0b1046643715b49bec51f which is licensed under the
 // MIT/Apache 2.0 license.
 
-#[macro_use]
-extern crate clap;
-
-use clap::Clap;
-
 mod options {
+    use clap::Clap;
+
     #[derive(Debug, Clap)]
     pub struct Options {
         #[clap(subcommand)]
-        pub subcommand: ::subcommands::SubCommand,
+        pub subcommand: super::subcommands::SubCommand,
     }
 }
 
 mod subcommands {
+    use clap::Clap;
+
     #[derive(Debug, Clap)]
     pub enum SubCommand {
         /// foo

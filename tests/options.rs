@@ -12,9 +12,6 @@
 // commit#ea76fa1b1b273e65e3b0b1046643715b49bec51f which is licensed under the
 // MIT/Apache 2.0 license.
 
-#[macro_use]
-extern crate clap;
-
 use clap::Clap;
 
 #[test]
@@ -133,14 +130,8 @@ fn optional_argument_for_optional_option() {
         },
         Opt::parse_from(&["test", "-a42"])
     );
-    assert_eq!(
-        Opt { arg: Some(None) },
-        Opt::parse_from(&["test", "-a"])
-    );
-    assert_eq!(
-        Opt { arg: None },
-        Opt::parse_from(&["test"])
-    );
+    assert_eq!(Opt { arg: Some(None) }, Opt::parse_from(&["test", "-a"]));
+    assert_eq!(Opt { arg: None }, Opt::parse_from(&["test"]));
     assert!(Opt::try_parse_from(&["test", "-a42", "-a24"]).is_err());
 }
 
@@ -245,20 +236,14 @@ fn optional_vec() {
         Opt::parse_from(&["test", "-a", "1", "2", "-a", "3"])
     );
 
-    assert_eq!(
-        Opt { arg: Some(vec![]) },
-        Opt::parse_from(&["test", "-a"])
-    );
+    assert_eq!(Opt { arg: Some(vec![]) }, Opt::parse_from(&["test", "-a"]));
 
     assert_eq!(
         Opt { arg: Some(vec![]) },
         Opt::parse_from(&["test", "-a", "-a"])
     );
 
-    assert_eq!(
-        Opt { arg: None },
-        Opt::parse_from(&["test"])
-    );
+    assert_eq!(Opt { arg: None }, Opt::parse_from(&["test"]));
 }
 
 #[test]
@@ -296,8 +281,5 @@ fn two_optional_vecs() {
         Opt::parse_from(&["test", "-a1", "-a2", "-b1", "-b2"])
     );
 
-    assert_eq!(
-        Opt { arg: None, b: None },
-        Opt::parse_from(&["test"])
-    );
+    assert_eq!(Opt { arg: None, b: None }, Opt::parse_from(&["test"]));
 }

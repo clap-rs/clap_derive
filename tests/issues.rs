@@ -1,9 +1,6 @@
 // https://github.com/TeXitoi/structopt/issues/151
 // https://github.com/TeXitoi/structopt/issues/289
 
-#[macro_use]
-extern crate clap;
-
 #[test]
 fn issue_151() {
     use clap::{ArgGroup, Clap, IntoApp};

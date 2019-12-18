@@ -1,8 +1,6 @@
 //! How to use `clap::Arg::group`
-#[macro_use]
-extern crate clap;
 
-use clap::{Clap, ArgGroup};
+use clap::{ArgGroup, Clap};
 
 #[derive(Clap, Debug)]
 #[clap(group = ArgGroup::with_name("verb").required(true))]

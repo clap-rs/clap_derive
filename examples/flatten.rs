@@ -1,8 +1,5 @@
 //! How to use flattening.
 
-#[macro_use]
-extern crate clap;
-
 use clap::Clap;
 
 #[derive(Clap, Debug)]

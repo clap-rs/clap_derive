@@ -1,7 +1,5 @@
 //! How to append a postscript to the help message generated.
 
-extern crate clap;
-
 use clap::Clap;
 
 /// I am a program and I do things.

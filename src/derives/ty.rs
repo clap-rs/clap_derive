@@ -1,6 +1,6 @@
 //! Special types handling
 
-use derives::spanned::Sp;
+use super::spanned::Sp;
 
 use syn::{
     spanned::Spanned, GenericArgument, Path, PathArguments, PathArguments::AngleBracketed,

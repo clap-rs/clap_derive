@@ -12,11 +12,8 @@
 // commit#ea76fa1b1b273e65e3b0b1046643715b49bec51f which is licensed under the
 // MIT/Apache 2.0 license.
 
-#[macro_use]
-extern crate clap;
-
-use std::num::ParseIntError;
 use clap::{AppSettings, Clap};
+use std::num::ParseIntError;
 
 pub const DISPLAY_ORDER: usize = 2;
 
@@ -147,7 +144,6 @@ fn test_parse_hex_function_path() {
         HexOpt::parse_from(&["test", "-n", "abcdef"])
     );
 
-    let err = HexOpt::try_parse_from(&["test", "-n", "gg"])
-        .unwrap_err();
+    let err = HexOpt::try_parse_from(&["test", "-n", "gg"]).unwrap_err();
     assert!(err.message.contains("invalid digit found in string"), err);
 }

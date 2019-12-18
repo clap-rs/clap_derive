@@ -12,7 +12,7 @@
 // commit#ea76fa1b1b273e65e3b0b1046643715b49bec51f which is licensed under the
 // MIT/Apache 2.0 license.
 
-use derives::{self, parse::*, spanned::Sp, ty::Ty};
+use super::{parse::*, spanned::Sp, ty::Ty};
 
 use std::env;
 
@@ -263,7 +263,7 @@ impl Attrs {
     }
 
     fn push_attrs(&mut self, attrs: &[syn::Attribute]) {
-        use derives::parse::ClapAttr::*;
+        use ClapAttr::*;
 
         for attr in parse_clap_attributes(attrs) {
             match attr {

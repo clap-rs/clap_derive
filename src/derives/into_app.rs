@@ -16,15 +16,16 @@ use std::env;
 use proc_macro2;
 use syn;
 
-use derives::{Attrs, Name, GenOutput, DEFAULT_CASING};
-use derives::spanned::Sp;
+use super::{spanned::Sp, Attrs, GenOutput, Name, DEFAULT_CASING};
 
 pub fn derive_into_app(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     use syn::Data::*;
 
     let struct_name = &input.ident;
     let inner_impl = match input.data {
-        Struct(syn::DataStruct { .. }) => gen_into_app_impl_for_struct(struct_name, &input.attrs).tokens,
+        Struct(syn::DataStruct { .. }) => {
+            gen_into_app_impl_for_struct(struct_name, &input.attrs).tokens
+        }
         // @TODO impl into_app for enums?
         // Enum(ref e) => clap_for_enum_impl(struct_name, &e.variants, &input.attrs),
         _ => panic!("clap_derive only supports non-tuple structs"), // and enums"),
@@ -33,10 +34,7 @@ pub fn derive_into_app(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     quote!(#inner_impl)
 }
 
-pub fn gen_into_app_impl_for_struct(
-    name: &syn::Ident,
-    attrs: &[syn::Attribute],
-) -> GenOutput {
+pub fn gen_into_app_impl_for_struct(name: &syn::Ident, attrs: &[syn::Attribute]) -> GenOutput {
     let into_app_fn = gen_into_app_fn_for_struct(attrs);
     let into_app_fn_tokens = into_app_fn.tokens;
 
@@ -82,7 +80,7 @@ pub fn gen_app_builder(attrs: &[syn::Attribute]) -> GenOutput {
         proc_macro2::Span::call_site(),
         attrs,
         Name::Assigned(syn::LitStr::new(&name, proc_macro2::Span::call_site())),
-        Sp::call_site(DEFAULT_CASING)
+        Sp::call_site(DEFAULT_CASING),
     );
     let tokens = {
         let name = attrs.cased_name();
@@ -92,10 +90,7 @@ pub fn gen_app_builder(attrs: &[syn::Attribute]) -> GenOutput {
     GenOutput { tokens, attrs }
 }
 
-pub fn gen_into_app_impl_for_enum(
-    name: &syn::Ident,
-    attrs: &[syn::Attribute],
-) -> GenOutput {
+pub fn gen_into_app_impl_for_enum(name: &syn::Ident, attrs: &[syn::Attribute]) -> GenOutput {
     let into_app_fn = gen_into_app_fn_for_enum(attrs);
     let into_app_fn_tokens = into_app_fn.tokens;
 

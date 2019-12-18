@@ -1,8 +1,5 @@
 //! How to use doc comments in place of `help/long_help`.
 
-#[macro_use]
-extern crate clap;
-
 use clap::Clap;
 
 /// A basic example for the usage of doc comments as replacement

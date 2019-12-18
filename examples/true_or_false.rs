@@ -1,7 +1,5 @@
 //! How to parse `--foo=true --bar=false` and turn them into bool.
 
-extern crate clap;
-
 use clap::Clap;
 
 fn true_or_false(s: &str) -> Result<bool, &'static str> {

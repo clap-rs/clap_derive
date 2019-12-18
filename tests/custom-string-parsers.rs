@@ -12,9 +12,6 @@
 // commit#ea76fa1b1b273e65e3b0b1046643715b49bec51f which is licensed under the
 // MIT/Apache 2.0 license.
 
-#[macro_use]
-extern crate clap;
-
 use clap::Clap;
 
 use std::ffi::{CString, OsStr, OsString};
@@ -60,7 +57,9 @@ fn test_path_opt_simple() {
     );
 }
 
-fn parse_hex(input: &str) -> Result<u64, ParseIntError> { u64::from_str_radix(input, 16) }
+fn parse_hex(input: &str) -> Result<u64, ParseIntError> {
+    u64::from_str_radix(input, 16)
+}
 
 #[derive(Clap, PartialEq, Debug)]
 struct HexOpt {
@@ -83,10 +82,18 @@ fn test_parse_hex() {
     assert!(err.message.contains("invalid digit found in string"), err);
 }
 
-fn custom_parser_1(_: &str) -> &'static str { "A" }
-fn custom_parser_2(_: &str) -> Result<&'static str, u32> { Ok("B") }
-fn custom_parser_3(_: &OsStr) -> &'static str { "C" }
-fn custom_parser_4(_: &OsStr) -> Result<&'static str, String> { Ok("D") }
+fn custom_parser_1(_: &str) -> &'static str {
+    "A"
+}
+fn custom_parser_2(_: &str) -> Result<&'static str, u32> {
+    Ok("B")
+}
+fn custom_parser_3(_: &OsStr) -> &'static str {
+    "C"
+}
+fn custom_parser_4(_: &OsStr) -> Result<&'static str, String> {
+    Ok("D")
+}
 
 #[derive(Clap, PartialEq, Debug)]
 struct NoOpOpt {
@@ -152,7 +159,9 @@ fn test_parser_with_default_value() {
 #[derive(PartialEq, Debug)]
 struct Foo(u8);
 
-fn foo(value: u64) -> Foo { Foo(value as u8) }
+fn foo(value: u64) -> Foo {
+    Foo(value as u8)
+}
 
 #[derive(Clap, PartialEq, Debug)]
 struct Occurrences {
@@ -292,6 +301,9 @@ fn test_cstring() {
     }
 
     assert!(Opt::try_parse_from(&["test"]).is_err());
-    assert_eq!(Opt::parse_from(&["test", "bla"]).c_string.to_bytes(), b"bla");
+    assert_eq!(
+        Opt::parse_from(&["test", "bla"]).c_string.to_bytes(),
+        b"bla"
+    );
     assert!(Opt::try_parse_from(&["test", "bla\0bla"]).is_err());
 }

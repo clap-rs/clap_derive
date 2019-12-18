@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate clap;
-
 use clap::Clap;
 
 #[test]
@@ -95,10 +92,7 @@ fn test_standalone_short_generates_kebab_case() {
         FOO_OPTION: bool,
     }
 
-    assert_eq!(
-        Opt { FOO_OPTION: true },
-        Opt::parse_from(&["test", "-f"])
-    );
+    assert_eq!(Opt { FOO_OPTION: true }, Opt::parse_from(&["test", "-f"]));
 }
 
 #[test]
@@ -109,10 +103,7 @@ fn test_custom_short_overwrites_default_name() {
         foo_option: bool,
     }
 
-    assert_eq!(
-        Opt { foo_option: true },
-        Opt::parse_from(&["test", "-o"])
-    );
+    assert_eq!(Opt { foo_option: true }, Opt::parse_from(&["test", "-o"]));
 }
 
 #[test]
@@ -123,10 +114,7 @@ fn test_standalone_short_uses_previous_defined_custom_name() {
         foo_option: bool,
     }
 
-    assert_eq!(
-        Opt { foo_option: true },
-        Opt::parse_from(&["test", "-o"])
-    );
+    assert_eq!(Opt { foo_option: true }, Opt::parse_from(&["test", "-o"]));
 }
 
 #[test]
@@ -137,10 +125,7 @@ fn test_standalone_short_ignores_afterwards_defined_custom_name() {
         foo_option: bool,
     }
 
-    assert_eq!(
-        Opt { foo_option: true },
-        Opt::parse_from(&["test", "-f"])
-    );
+    assert_eq!(Opt { foo_option: true }, Opt::parse_from(&["test", "-f"]));
 }
 
 #[test]
@@ -165,10 +150,7 @@ fn test_standalone_short_uses_previous_defined_casing() {
         foo_option: bool,
     }
 
-    assert_eq!(
-        Opt { foo_option: true },
-        Opt::parse_from(&["test", "-F"])
-    );
+    assert_eq!(Opt { foo_option: true }, Opt::parse_from(&["test", "-F"]));
 }
 
 #[test]
@@ -194,10 +176,7 @@ fn test_standalone_short_works_with_verbatim_casing() {
         _foo: bool,
     }
 
-    assert_eq!(
-        Opt { _foo: true },
-        Opt::parse_from(&["test", "-_"])
-    );
+    assert_eq!(Opt { _foo: true }, Opt::parse_from(&["test", "-_"]));
 }
 
 #[test]
@@ -209,10 +188,7 @@ fn test_rename_all_is_propagated_from_struct_to_fields() {
         foo: bool,
     }
 
-    assert_eq!(
-        Opt { foo: true },
-        Opt::parse_from(&["test", "--FOO"])
-    );
+    assert_eq!(Opt { foo: true }, Opt::parse_from(&["test", "--FOO"]));
 }
 
 #[test]

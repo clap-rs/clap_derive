@@ -3,9 +3,6 @@
 //! Documentation can be added either through doc comments or
 //! `help`/`about` attributes.
 
-#[macro_use]
-extern crate clap;
-
 use clap::Clap;
 
 #[derive(Clap, Debug)]

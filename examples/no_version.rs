@@ -1,8 +1,5 @@
 //! How to completely remove version.
 
-#[macro_use]
-extern crate clap;
-
 use clap::{AppSettings, Clap};
 
 #[derive(Clap, Debug)]
