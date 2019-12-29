@@ -27,7 +27,6 @@ syn = { version = "1", features = ["full"] }
 quote = "1"
 proc-macro2 = "1"
 heck = "0.3.0"
-clippy = {version = "0.0.174", optional = true }
 proc-macro-error = "0.4.3"
 
 [dev-dependencies]
@@ -38,6 +37,6 @@ rustversion = "0.1"
 [features]
 default = []
 nightly = []
-lints = ["clippy"]
+lints = []
 debug = []
 doc = []

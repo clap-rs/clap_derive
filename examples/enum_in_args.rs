@@ -1,4 +1,5 @@
 //! How to use `arg_enum!` with `StructOpt`.
+// TODO: make it work
 fn main() {}
 // use clap::Clap;
 

@@ -1,5 +1,5 @@
 error: expected parentheses
-  --> $DIR/structopt_name_value_attr.rs:14:12
+  --> $DIR/clap_derive_name_value_attr.rs:14:12
    |
 14 |     #[clap = "short"]
    |            ^

@@ -9,7 +9,6 @@
 use clap::Clap;
 
 #[derive(Clap, Debug)]
-#[clap(name = "make-cookie")]
 struct MakeCookie {
     #[clap(short)]
     s: String,
@@ -20,7 +19,6 @@ struct MakeCookie {
 
 #[derive(Clap, Debug)]
 enum Command {
-    #[clap(name = "pound")]
     /// Pound acorns into flour for cookie dough.
     Pound { acorns: u32 },
 
